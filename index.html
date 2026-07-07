@@ -510,22 +510,8 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-header-band">
-      <div class="login-logo">PPC RANKS</div>
-      <div class="login-title">Timekeeping System</div>
-      <div class="login-sub">Authorized Personnel Only</div>
-    </div>
-    <div class="login-body">
-      <input type="text" id="login-user" placeholder="Username" autocomplete="off">
-      <input type="password" id="login-pass" placeholder="Password">
-      <button class="btn-login" id="btn-login">Sign In</button>
-      <div class="login-error" id="login-err"></div>
-    </div>
-  </div>
-</div>
+<!-- LOGIN (disabled — open access, app loads directly) -->
+<div id="login-screen" style="display:none"></div>
 
 <!-- APP -->
 <div id="app">
@@ -544,7 +530,7 @@
       </div>
       <div class="header-user" id="header-user"></div>
       <button id="btn-import-logs" onclick="importLogsFromXlsx()" style="font-size:11px;padding:4px 10px;background:#f59e0b;color:#1e293b;border:none;border-radius:4px;cursor:pointer;font-weight:700;font-family:var(--mono);letter-spacing:0.5px" title="Import May 6 logs from xlsx">📥 IMPORT MAY 6–8</button>
-      <button class="btn-logout" id="btn-logout">Sign Out</button>
+      <button class="btn-logout" id="btn-logout" style="display:none">Sign Out</button>
     </div>
   </div>
 
@@ -910,22 +896,13 @@ const STATE = {
   }
 })();
 
-// ─── AUTH ───────────────────────────────────────────────────────
-function doLogin() {
-  const u = (document.getElementById('login-user').value || '').trim().toLowerCase();
-  const p = (document.getElementById('login-pass').value || '').trim();
-  // Accept any non-empty credentials, or specifically jess/jess
-  if (u && p) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('header-user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
-    loadSavedSessions();
-    cloudPull().then(()=>{ deduplicateAllLogs(); updateDashboard(); renderShiftPreview && renderShiftPreview(); renderEmpTable && renderEmpTable(); });
-    toast('Welcome back, ' + (u.charAt(0).toUpperCase() + u.slice(1)) + '!', 'success');
-  } else {
-    document.getElementById('login-err').textContent = 'Please enter username and password.';
-    document.getElementById('login-pass').value = '';
-  }
+// ─── OPEN ACCESS (no login required) ────────────────────────────
+function enterApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('header-user').textContent = 'PPC Ranks';
+  loadSavedSessions();
+  cloudPull().then(()=>{ deduplicateAllLogs(); updateDashboard(); renderShiftPreview && renderShiftPreview(); renderEmpTable && renderEmpTable(); });
 }
 
 
@@ -964,17 +941,8 @@ async function importLogsFromXlsx() {
   setTimeout(() => { btn.style.display = 'none'; }, 4000);
 }
 
-function doLogout() {
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
-  document.getElementById('login-err').textContent = '';
-}
-document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('btn-login').addEventListener('click', doLogin);
-document.getElementById('btn-logout').addEventListener('click', doLogout);
+// Enter the app immediately on page load — no sign-in needed.
+window.addEventListener('DOMContentLoaded', enterApp);
 
 // ─── TABS ────────────────────────────────────────────────────────
 function switchTab(name) {
