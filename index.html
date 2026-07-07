@@ -964,10 +964,14 @@ const STATE = {
   logs: {},          // {empId: [{date, timeIn, timeOut, shiftCode}]}
   leave: [],         // [{empId, date, type, hours, remarks}]
   reportHistory: [], // [{period, generated, rows}]
+  shiftMasterVersion: 0,
 };
 
 // ─── PRELOADED SHIFT CODE MASTERFILE ─────────────────────────────
-// Built from the official shiftcode.csv; used when no saved/cloud data exists.
+// Built from the official shiftcode.csv. Any saved/cloud shift masterfile
+// with a version older than this is replaced once; edits made after that
+// keep the current version and are never overwritten.
+const DEFAULT_SHIFT_VERSION = 2;
 const DEFAULT_SHIFT_MASTER = [
   {code:"A01",desc:"06:00-10:00 / 11:00-15:00",timeIn:"06:00",timeOut:"15:00",breakDur:1,stdHours:8},
   {code:"A02",desc:"06:00-11:00 / 12:00-17:00",timeIn:"06:00",timeOut:"17:00",breakDur:1,stdHours:10},
@@ -1126,8 +1130,11 @@ const DEFAULT_SHIFT_MASTER = [
 ];
 
 function ensureDefaultShiftMaster() {
-  if (STATE.shiftMaster.length) return;
+  // Replace when empty OR when the stored data predates the current default list
+  // (old records had badly-parsed times like 00:00/30:00 and breaks like 12h)
+  if (STATE.shiftMaster.length && (STATE.shiftMasterVersion || 0) >= DEFAULT_SHIFT_VERSION) return;
   STATE.shiftMaster = DEFAULT_SHIFT_MASTER.map(s => ({ ...s }));
+  STATE.shiftMasterVersion = DEFAULT_SHIFT_VERSION;
   const st = document.getElementById('shift-upload-status');
   if (st) st.innerHTML = `<span class="badge badge-green">✓ ${STATE.shiftMaster.length} shift codes — preloaded</span>`;
   const badge = document.getElementById('status-shift');
@@ -1400,6 +1407,7 @@ function saveEmpSession() {
 
 function loadSavedSessions() {
   // Load shift master
+  try { STATE.shiftMasterVersion = parseInt(localStorage.getItem('ppc_shiftVer') || '0'); } catch(e) {}
   try {
     const saved = localStorage.getItem('ppc_shiftMaster');
     if (saved) {
@@ -1530,6 +1538,7 @@ async function cloudPush(){
   try {
     const payload = {
       shiftMaster: STATE.shiftMaster,
+      shiftVer:    STATE.shiftMasterVersion || 0,
       employees:   STATE.employees,
       logs:        STATE.logs,
       leave:       STATE.leave,
@@ -1583,7 +1592,7 @@ async function cloudPull(){
     const isNewer = remoteTs > localTs || localTs === 0;
 
     if(isNewer){
-      if(Array.isArray(data.shiftMaster)) STATE.shiftMaster = data.shiftMaster;
+      if(Array.isArray(data.shiftMaster)) { STATE.shiftMaster = data.shiftMaster; STATE.shiftMasterVersion = data.shiftVer || 0; }
       if(Array.isArray(data.employees))   STATE.employees   = data.employees;
       if(data.logs && typeof data.logs==='object') {
         // Deduplicate each employee's log by dateIn before storing
@@ -1623,6 +1632,7 @@ async function cloudPull(){
     }
     try {
       localStorage.setItem('ppc_shiftMaster',    JSON.stringify(STATE.shiftMaster));
+      localStorage.setItem('ppc_shiftVer',        String(STATE.shiftMasterVersion || 0));
       localStorage.setItem('ppc_employees',       JSON.stringify(STATE.employees));
       localStorage.setItem('ppc_logs',            JSON.stringify(STATE.logs));
       localStorage.setItem('ppc_leave',           JSON.stringify(STATE.leave));
@@ -1644,6 +1654,7 @@ function fbSave(){
   try {
     localStorage.setItem('ppc_logs',          JSON.stringify(STATE.logs));
     localStorage.setItem('ppc_shiftMaster',   JSON.stringify(STATE.shiftMaster));
+    localStorage.setItem('ppc_shiftVer',      String(STATE.shiftMasterVersion || 0));
     localStorage.setItem('ppc_employees',     JSON.stringify(STATE.employees));
     localStorage.setItem('ppc_leave',         JSON.stringify(STATE.leave));
     localStorage.setItem('ppc_reportHistory', JSON.stringify(STATE.reportHistory));
