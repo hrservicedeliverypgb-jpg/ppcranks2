@@ -1,0 +1,3118 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPC RANKS Timekeeping</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Calibri:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy: #1F3864;
+    --navy-mid: #2A4A7A;
+    --navy-light: #3B5FA0;
+    --navy-header: #1F3864;
+    --accent: #2E75B6;
+    --accent2: #1F5591;
+    --accent-dim: rgba(46,117,182,0.10);
+    --accent-glow: rgba(46,117,182,0.20);
+    --text: #1a1a1a;
+    --text2: #2c2c2c;
+    --text3: #888888;
+    --border: #BDD7EE;
+    --border2: #DEEAF1;
+    --danger: #C00000;
+    --warn: #ED7D31;
+    --success: #375623;
+    --info: #2563eb;
+    --card: #ffffff;
+    --input-bg: #ffffff;
+    --row-alt: #DEEAF1;
+    --row-hover: #BDD7EE;
+    --mono: 'IBM Plex Mono', monospace;
+    --th-bg: #1F3864;
+    --th-color: #ffffff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+    background: #E9EFF7;
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(160deg, #E4EAF4 0%, #EFF3FA 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── LOGIN ─────────────────────────────────── */
+  #login-screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1F3864 0%, #2A4A7A 50%, #1a3258 100%);
+    z-index: 9999;
+  }
+  .login-box {
+    width: 380px;
+    background: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+    overflow: hidden;
+  }
+  .login-header-band {
+    background: var(--navy-header);
+    padding: 28px 36px 22px;
+    border-bottom: 4px solid var(--accent);
+  }
+  .login-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #BDD7EE;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .login-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .login-sub {
+    font-size: 11px;
+    color: #9DB8D9;
+    margin-bottom: 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .login-body { padding: 28px 36px 32px; }
+  .login-box input {
+    width: 100%;
+    background: #F4F7FB;
+    border: 1px solid #BDD7EE;
+    border-radius: 3px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .login-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(46,117,182,0.12); }
+  .login-box input::placeholder { color: #aaa; }
+  .btn-login {
+    width: 100%;
+    background: var(--navy-header);
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 4px;
+  }
+  .btn-login:hover { background: var(--accent); }
+  .btn-login:active { transform: scale(0.98); }
+  .login-error {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
+  /* ─── APP SHELL ──────────────────────────────── */
+  #app { display: none; min-height: 100vh; position: relative; z-index: 1; }
+
+  /* ─── HEADER ─────────────────────────────────── */
+  .header {
+    background: var(--navy-header);
+    border-bottom: 3px solid var(--accent);
+    padding: 0 28px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .header-dot {
+    width: 8px; height: 8px;
+    background: #BDD7EE;
+    border-radius: 50%;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+  .header-title span { color: #BDD7EE; }
+  .header-right {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .header-user {
+    font-size: 12px;
+    color: #9DB8D9;
+    font-family: var(--mono);
+  }
+  .btn-logout {
+    background: transparent;
+    border: 1px solid rgba(189,215,238,0.4);
+    color: #BDD7EE;
+    border-radius: 3px;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.08); }
+
+  /* ─── VERTICAL SIDEBAR NAV ──────────────────── */
+  .app-layout {
+    display: flex;
+    min-height: calc(100vh - 54px);
+  }
+  .nav-tabs {
+    width: 168px;
+    flex-shrink: 0;
+    background: #1a2f58;
+    border-right: 1px solid rgba(189,215,238,0.15);
+    padding: 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    position: sticky;
+    top: 54px;
+    height: calc(100vh - 54px);
+    overflow-y: auto;
+  }
+  .nav-tab {
+    padding: 9px 14px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: #9DB8D9;
+    cursor: pointer;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    letter-spacing: 0.2px;
+    background: transparent;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: #ffffff; background: rgba(46,117,182,0.25); }
+  .nav-tab.active {
+    color: #ffffff;
+    background: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
+  }
+
+  /* ─── MAIN CONTENT ───────────────────────────── */
+  .main { padding: 20px 22px; flex: 1; min-width: 0; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ─── SECTION CARDS ──────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid #BDD7EE;
+    border-radius: 3px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(31,56,100,0.08);
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--navy-header);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px solid var(--navy-header);
+    padding-bottom: 8px;
+  }
+  .card-title::before {
+    content: '';
+    width: 4px; height: 14px;
+    background: var(--accent);
+    border-radius: 1px;
+  }
+
+  /* ─── GRID HELPERS ───────────────────────────── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  /* ─── FORM ELEMENTS ──────────────────────────── */
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-label {
+    font-size: 11px;
+    color: var(--navy-header);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  input[type=text], input[type=date], input[type=time], input[type=password], select, textarea {
+    background: var(--input-bg);
+    border: 1px solid #BDD7EE;
+    border-radius: 2px;
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(46,117,182,0.12); }
+  input::placeholder, textarea::placeholder { color: #aaa; }
+  select option { background: #ffffff; color: var(--text); }
+
+  /* ─── BUTTONS ────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--navy-header); color: #ffffff; }
+  .btn-primary:hover { background: var(--accent); }
+  .btn-secondary { background: #DEEAF1; color: var(--navy-header); border: 1px solid #BDD7EE; }
+  .btn-secondary:hover { background: #BDD7EE; }
+  .btn-danger { background: rgba(192,0,0,0.08); color: var(--danger); border: 1px solid rgba(192,0,0,0.25); }
+  .btn-danger:hover { background: rgba(192,0,0,0.18); }
+  .btn-warn { background: rgba(237,125,49,0.10); color: var(--warn); border: 1px solid rgba(237,125,49,0.3); }
+  .btn-warn:hover { background: rgba(237,125,49,0.2); }
+  .btn-sm { padding: 4px 11px; font-size: 12px; }
+
+  /* ─── STATS TILES ────────────────────────────── */
+  .stat-tile {
+    background: #DEEAF1;
+    border: 1px solid #BDD7EE;
+    border-top: 3px solid var(--navy-header);
+    border-radius: 2px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-label { font-size: 10px; color: var(--navy-header); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 700; }
+  .stat-value { font-size: 22px; font-weight: 700; font-family: var(--mono); color: var(--navy-header); }
+  .stat-value.green { color: #375623; }
+  .stat-value.red { color: var(--danger); }
+  .stat-value.amber { color: var(--warn); }
+  .stat-value.blue { color: var(--accent); }
+
+  /* ─── TABLE ──────────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: 2px; border: 1px solid #BDD7EE; box-shadow: 0 2px 6px rgba(31,56,100,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--th-bg);
+    color: var(--th-color);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--accent);
+    border-right: 1px solid rgba(189,215,238,0.2);
+    white-space: nowrap;
+  }
+  th:last-child { border-right: none; }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #DEEAF1;
+    border-right: 1px solid #DEEAF1;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  td:last-child { border-right: none; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: #EEF4FA; }
+  tbody tr:hover td { background: #BDD7EE !important; }
+  .mono { font-family: var(--mono); color: var(--text); }
+
+  /* ─── BADGE ──────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: 0.3px;
+  }
+  .badge-green { background: #E2EFDA; color: #375623; border: 1px solid #A9D18E; }
+  .badge-red { background: #FCE4D6; color: #C00000; border: 1px solid #F4B183; }
+  .badge-amber { background: #FFF2CC; color: #7F6000; border: 1px solid #FFD966; }
+  .badge-blue { background: #DEEAF1; color: #1F3864; border: 1px solid #9DC3E6; }
+  .badge-gray { background: #F2F2F2; color: #595959; border: 1px solid #D9D9D9; }
+
+  /* ─── LOG ENTRY ROWS ─────────────────────────── */
+  .log-row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.5fr 0.8fr 0.7fr 0.95fr 0.95fr 0.95fr 0.95fr 1fr 0.75fr 0.65fr 0.75fr 0.65fr 0.65fr 36px;
+    gap: 6px;
+    align-items: center;
+    padding: 7px 4px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .log-row:last-child { border-bottom: none; }
+  .log-row-header {
+    font-size: 10px;
+    color: #ffffff;
+    background: var(--navy-header);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    border-radius: 0;
+    padding: 8px 4px;
+  }
+  .log-computed {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: center;
+  }
+  .remove-log {
+    width: 26px; height: 26px;
+    background: rgba(255,107,107,0.1);
+    border: 1px solid rgba(255,107,107,0.2);
+    border-radius: 5px;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .remove-log:hover { background: rgba(255,107,107,0.22); }
+
+  /* ─── UPLOAD ZONE ────────────────────────────── */
+  .upload-zone {
+    border: 2px dashed #BDD7EE;
+    border-radius: 3px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: #F8FAFD;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: #DEEAF1;
+  }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%; height: 100%;
+    border: none; padding: 0;
+  }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 13px; color: var(--text2); }
+  .upload-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .upload-status { margin-top: 10px; font-size: 12px; }
+
+  /* ─── TOAST ──────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--navy-header);
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: #ffffff;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.3s;
+    pointer-events: none;
+    max-width: 320px;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.success { border-color: #A9D18E; }
+  #toast.error { border-color: #F4B183; }
+
+  /* ─── SCROLLBAR ──────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #F0F4FA; }
+  ::-webkit-scrollbar-thumb { background: #9DC3E6; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ─── MISC ───────────────────────────────────── */
+  .sep { width: 100%; height: 1px; background: #BDD7EE; margin: 16px 0; }
+  .flex { display: flex; }
+  .flex-center { display: flex; align-items: center; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .gap8 { gap: 8px; }
+  .gap12 { gap: 12px; }
+  .gap16 { gap: 16px; }
+  .mt8 { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .fw6 { font-weight: 700; }
+  .text-accent { color: var(--accent); }
+  .text-muted { color: #888; }
+  .empty-state { color: #aaa; font-size: 13px; text-align: center; padding: 32px; font-style: italic; }
+
+  @media (max-width: 900px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+    .log-row { grid-template-columns: 1fr 1fr; }
+    .log-row-header { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-header-band">
+      <div class="login-logo">PPC RANKS</div>
+      <div class="login-title">Timekeeping System</div>
+      <div class="login-sub">Authorized Personnel Only</div>
+    </div>
+    <div class="login-body">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="off">
+      <input type="password" id="login-pass" placeholder="Password">
+      <button class="btn-login" id="btn-login">Sign In</button>
+      <div class="login-error" id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-dot"></div>
+      <div class="header-title"><span>PPC RANKS</span> — Timekeeping</div>
+    </div>
+    <div class="header-right">
+      <div id="autosave-indicator" style="font-size:11px;font-family:var(--mono);color:var(--text3);display:flex;align-items:center;gap:5px;opacity:0;transition:opacity 0.4s">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Saved
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:#9DB8D9" title="Cloud sync status">
+        <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;transition:background 0.4s;flex-shrink:0"></span>
+        <span id="syncLabel" style="font-size:10px;letter-spacing:0.5px">SYNC</span>
+      </div>
+      <div class="header-user" id="header-user"></div>
+      <button id="btn-import-logs" onclick="importLogsFromXlsx()" style="font-size:11px;padding:4px 10px;background:#f59e0b;color:#1e293b;border:none;border-radius:4px;cursor:pointer;font-weight:700;font-family:var(--mono);letter-spacing:0.5px" title="Import May 6 logs from xlsx">📥 IMPORT MAY 6–8</button>
+      <button class="btn-logout" id="btn-logout">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="app-layout">
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab(&#39;dashboard&#39;)">📊 Dashboard</div>
+    <div class="nav-tab" onclick="switchTab(&#39;masterfiles&#39;)">📁 Masterfiles</div>
+    <div class="nav-tab" onclick="switchTab(&#39;employees&#39;)">👥 Employees</div>
+    <div class="nav-tab" onclick="switchTab(&#39;timelog&#39;)">⏱ Time Log</div>
+    <div class="nav-tab" onclick="switchTab(&#39;reports&#39;)">📋 Reports</div>
+    <div class="nav-tab" onclick="switchTab(&#39;leave&#39;)">🏖 Leave</div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="grid4" style="margin-bottom:20px">
+        <div class="stat-tile">
+          <div class="stat-label">Employees</div>
+          <div class="stat-value blue" id="stat-emp">0</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Shift Codes</div>
+          <div class="stat-value green" id="stat-shifts">0</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Log Entries</div>
+          <div class="stat-value" id="stat-logs">0</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Coverage Days</div>
+          <div class="stat-value amber" id="stat-days">—</div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">System Status</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="flex-between">
+              <span class="text-muted">Shift Masterfile</span>
+              <span id="status-shift" class="badge badge-gray">Not Loaded</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted">Employee Masterfile</span>
+              <span id="status-emp" class="badge badge-gray">Not Loaded</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted">Coverage Period</span>
+              <span id="status-coverage" class="badge badge-gray">Not Set</span>
+            </div>
+            <div class="flex-between">
+              <span class="text-muted">Selected Employee</span>
+              <span id="status-selected" class="badge badge-gray">None</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-secondary" onclick="switchTab(&#39;masterfiles&#39;)">📁 Upload Masterfiles</button>
+            <button class="btn btn-secondary" onclick="switchTab(&#39;employees&#39;)">👥 Manage Employees</button>
+            <button class="btn btn-secondary" onclick="switchTab(&#39;timelog&#39;)">⏱ Enter Time Logs</button>
+            <button class="btn btn-primary" onclick="switchTab(&#39;reports&#39;)">📋 Generate Report</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MASTERFILES TAB -->
+    <div class="tab-pane" id="tab-masterfiles">
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Shift Code Masterfile</div>
+          <p class="text-muted" style="font-size:12px;margin-bottom:14px">Excel with: Shift Code, Shift Description, Standard Time In <span style="color:var(--accent)">(HH:MM or H:MM AM/PM)</span>, Standard Time Out, Break Duration (hrs), Total Standard Work Hours</p>
+          <div class="upload-zone" id="shift-zone">
+            <input type="file" accept=".csv" onchange="loadShiftMaster(event)">
+            <div class="upload-icon">📊</div>
+            <div class="upload-label">Drop Excel file or click to browse</div>
+            <div class="upload-sub">.csv supported</div>
+          </div>
+          <div class="upload-status" id="shift-upload-status"></div>
+          <div id="shift-save-wrap" style="display:none;margin-top:10px;margin-bottom:4px">
+            <button class="btn btn-primary btn-sm" onclick="saveShiftSession()" style="width:100%">💾 Save to Record</button>
+          </div>
+          <div class="mt12" id="shift-preview"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Employee Masterfile</div>
+          <p class="text-muted" style="font-size:12px;margin-bottom:14px">Excel with: Employee ID, Employee Name</p>
+          <div class="upload-zone" id="emp-zone">
+            <input type="file" accept=".csv" onchange="loadEmpMaster(event)">
+            <div class="upload-icon">👥</div>
+            <div class="upload-label">Drop Excel file or click to browse</div>
+            <div class="upload-sub">.csv supported</div>
+          </div>
+          <div class="upload-status" id="emp-upload-status"></div>
+          <div class="mt12" id="emp-preview"></div>
+          <div id="emp-save-wrap" style="display:none;margin-top:12px">
+            <button class="btn btn-primary btn-sm" onclick="saveEmpSession()" style="width:100%">💾 Save to Record</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES TAB -->
+    <div class="tab-pane" id="tab-employees">
+      <div class="card">
+        <div class="card-title">Add Employee</div>
+        <div class="grid3" style="align-items:end;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Employee ID</label>
+            <input type="text" id="new-emp-id" placeholder="e.g. EMP-001">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Employee Name</label>
+            <input type="text" id="new-emp-name" placeholder="Full Name">
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="addEmployee()">+ Add Employee</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title flex-between" style="margin-bottom:12px">
+          <span>Employee List</span>
+          <input type="text" placeholder="Search..." id="emp-search" style="width:200px;margin:0" oninput="renderEmpTable()">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Employee ID</th><th>Employee Name</th><th>Action</th></tr></thead>
+            <tbody id="emp-tbody"><tr><td colspan="4" class="empty-state">No employees found</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIME LOG TAB -->
+    <div class="tab-pane" id="tab-timelog">
+      <div class="card">
+        <div class="card-title">Coverage &amp; Selection</div>
+        <div class="grid3" style="gap:12px;align-items:end">
+          <div class="form-group">
+            <label class="form-label">Coverage From</label>
+            <input type="date" id="cov-from" onchange="updateCoverage()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Coverage To</label>
+            <input type="date" id="cov-to" onchange="updateCoverage()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Search by Last Name</label>
+            <div style="position:relative">
+              <input type="text" id="timelog-lastname-search" placeholder="Type last name…" oninput="filterTimelogEmpByLastname(this.value)" autocomplete="off" style="width:100%;padding-right:28px">
+              <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:13px;color:#aaa;pointer-events:none">🔍</span>
+              <div id="timelog-search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #BDD7EE;border-top:none;border-radius:0 0 3px 3px;max-height:200px;overflow-y:auto;z-index:200;box-shadow:0 4px 12px rgba(31,56,100,0.12)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coverage date summary bar -->
+        <div id="cov-summary-bar" style="display:none;margin-top:14px;padding:10px 16px;background:linear-gradient(90deg,#1F3864 0%,#2A4A7A 100%);border-radius:3px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#BDD7EE;font-weight:700">Coverage Period</span>
+          <div style="display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap">
+            <span id="cov-summary-from" style="font-family:var(--mono);font-size:14px;font-weight:700;color:#ffffff;background:rgba(255,255,255,0.10);border:1px solid rgba(189,215,238,0.3);border-radius:2px;padding:3px 12px"></span>
+            <span style="color:#BDD7EE;font-size:16px;font-weight:300">→</span>
+            <span id="cov-summary-to" style="font-family:var(--mono);font-size:14px;font-weight:700;color:#ffffff;background:rgba(255,255,255,0.10);border:1px solid rgba(189,215,238,0.3);border-radius:2px;padding:3px 12px"></span>
+            <span id="cov-summary-days" style="font-size:11px;color:#9DB8D9;font-family:var(--mono);margin-left:4px"></span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label">Select Employee</label>
+          <select id="emp-select" onchange="onEmpSelect()">
+            <option value="">— Select Employee —</option>
+          </select>
+        </div>
+        <div class="mt8 flex gap8" id="emp-name-display" style="display:none!important"></div>
+      </div>
+
+      <div class="card" id="log-entry-card" style="display:none">
+        <div class="card-title flex-between">
+          <span>Time Log Entries — <span id="log-emp-label" class="text-accent"></span></span>
+          <div class="flex gap8">
+            <button class="btn btn-danger btn-sm" onclick="clearAllLogs()">🗑 Clear All</button>
+          </div>
+        </div>
+        <div id="log-coverage-banner" style="display:none;margin-bottom:12px;padding:7px 14px;background:rgba(0,212,170,0.07);border:1px solid rgba(0,212,170,0.18);border-radius:7px;font-family:var(--mono);font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px">
+          <span style="color:var(--accent);font-size:11px;letter-spacing:1px;text-transform:uppercase">Coverage</span>
+          <span id="log-coverage-range" style="color:var(--text)"></span>
+        </div>
+
+        <div style="overflow-x:auto">
+        <div class="log-row log-row-header">
+          <span>Date In</span><span>Day</span><span>Shift</span><span>Shft Hrs</span><span>Time-In Date</span><span>Act Time-In</span><span>Time-Out Date</span><span>Act Time-Out</span><span>Remark</span><span style="text-align:center">Reg-Hrs</span>
+          <span style="text-align:center">OT Hrs</span>
+          <span style="text-align:center">Late (hrs)</span>
+          <span style="text-align:center">UT (hrs)</span>
+          <span style="text-align:center">Abs (hrs)</span>
+          <span></span>
+        </div>
+        <div id="log-rows-container"></div>
+        </div>
+
+        <div class="sep"></div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px" id="log-totals">
+          <div class="stat-tile">
+            <div class="stat-label">Total Reg Hours</div>
+            <div class="stat-value green" id="tot-hours">0.00</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total OT (hrs)</div>
+            <div class="stat-value blue" id="tot-ot">0.00</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Late (hrs)</div>
+            <div class="stat-value red" id="tot-late">0.00</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Undertime (hrs)</div>
+            <div class="stat-value amber" id="tot-ut">0.00</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Total Absent (hrs)</div>
+            <div class="stat-value" id="tot-abs">0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div class="tab-pane" id="tab-reports">
+      <div class="card">
+        <div class="card-title">Report Filters</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;align-items:end;margin-bottom:12px">
+          <div class="form-group">
+            <label class="form-label">Date From</label>
+            <input type="date" id="rpt-date-from">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date To</label>
+            <input type="date" id="rpt-date-to">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Employee Filter</label>
+            <select id="rpt-emp-filter">
+              <option value="all">All Employees</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sort By</label>
+            <select id="rpt-sort">
+              <option value="id">Employee ID</option>
+              <option value="name">Name</option>
+              <option value="hours">Total Hours</option>
+              <option value="late">Total Late</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap8">
+          <button class="btn btn-secondary btn-sm" onclick="applyReportCoverageDates()">Use Coverage Dates</button>
+          <button class="btn btn-primary" onclick="generateReport()">📊 Generate &amp; Save Report</button>
+          <button class="btn btn-secondary" onclick="exportCurrentCSV()">⬇ Export XLSX</button>
+          <button class="btn btn-warn" onclick="generateActualTimeInOut()">🕐 Actual Time In/Out</button>
+        </div>
+      </div>
+      <!-- Report History -->
+      <div id="rpt-history-container"></div>
+      <!-- Actual Time In/Out Report -->
+      <div id="actual-timeinout-container"></div>
+    </div>
+
+    <!-- LEAVE TAB -->
+    <div class="tab-pane" id="tab-leave">
+      <div class="card">
+        <div class="card-title">Add Leave Entry</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:12px;align-items:end">
+          <div class="form-group">
+            <label class="form-label">Employee</label>
+            <select id="leave-emp-select">
+              <option value="">— Select Employee —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date From</label>
+            <input type="date" id="leave-date-from">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date To</label>
+            <input type="date" id="leave-date-to">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Leave Type</label>
+            <select id="leave-type">
+              <option value="VL">Vacation Leave</option>
+              <option value="SL">Sick Leave</option>
+              <option value="EL">Emergency Leave</option>
+              <option value="ML">Maternity Leave</option>
+              <option value="PL">Paternity Leave</option>
+              <option value="OL">Other Leave</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hours / Day</label>
+            <input type="number" id="leave-hours" placeholder="e.g. 8" min="0.5" max="24" step="0.5" style="font-family:var(--mono)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Remarks</label>
+            <input type="text" id="leave-remarks" placeholder="Optional">
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
+          <button class="btn btn-primary" onclick="addLeaveEntry()">+ Add Leave</button>
+          <span id="leave-preview-label" class="text-muted" style="font-size:12px;font-family:var(--mono)"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title flex-between">
+          <span>Leave Records</span>
+          <div class="flex gap8" style="align-items:center">
+            <select id="leave-filter-emp" onchange="renderLeaveTable()" style="width:200px;margin:0;padding:6px 10px;font-size:12px">
+              <option value="all">All Employees</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Employee</th><th>Date From</th><th>Date To</th><th>Leave Type</th><th>Hrs/Day</th><th>Total Hrs</th><th>Remarks</th><th>Action</th></tr></thead>
+            <tbody id="leave-tbody"><tr><td colspan="8" class="empty-state">No leave records yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+  </div><!-- /app-layout -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────
+const STATE = {
+  shiftMaster: [],   // [{code, desc, timeIn, timeOut, breakDur, stdHours}]
+  employees: [],     // [{id, name}]
+  coverageFrom: '',
+  coverageTo: '',
+  selectedEmpId: '',
+  logs: {},          // {empId: [{date, timeIn, timeOut, shiftCode}]}
+  leave: [],         // [{empId, date, type, hours, remarks}]
+  reportHistory: [], // [{period, generated, rows}]
+};
+
+
+// ─── FRESH START — wipe old data once, then preserve future saves ─
+(function(){
+  const FRESH_KEY = 'ppc_fresh_v2';
+  if (!localStorage.getItem(FRESH_KEY)) {
+    // First time running this version — clear any old preloaded data
+    const keys = ['ppc_employees','ppc_shiftMaster','ppc_logs','ppc_coverage','ppc_leave','ppc_reportHistory'];
+    keys.forEach(k => { try { localStorage.removeItem(k); } catch(e){} });
+    try { localStorage.setItem(FRESH_KEY, '1'); } catch(e){}
+  }
+})();
+
+// ─── AUTH ───────────────────────────────────────────────────────
+function doLogin() {
+  const u = (document.getElementById('login-user').value || '').trim().toLowerCase();
+  const p = (document.getElementById('login-pass').value || '').trim();
+  // Accept any non-empty credentials, or specifically jess/jess
+  if (u && p) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('header-user').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+    loadSavedSessions();
+    cloudPull().then(()=>{ deduplicateAllLogs(); updateDashboard(); renderShiftPreview && renderShiftPreview(); renderEmpTable && renderEmpTable(); });
+    toast('Welcome back, ' + (u.charAt(0).toUpperCase() + u.slice(1)) + '!', 'success');
+  } else {
+    document.getElementById('login-err').textContent = 'Please enter username and password.';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+
+// ─── ONE-TIME IMPORT: May 6-8 2026 from xlsx ─────────────────────
+async function importLogsFromXlsx() {
+  const dates = ["2026-05-06", "2026-05-07", "2026-05-08"];
+  const label = dates.join(', ');
+  if (!confirm('Replace all entries for ' + label + ' with data from xlsx? (105 employees × 3 days)')) return;
+  const btn = document.getElementById('btn-import-logs');
+  btn.textContent = '⏳ Loading...';
+  btn.disabled = true;
+
+  const NEW_LOGS = {"PR003915": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "18:10", "timeOut": "07:02", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:10", "timeOut": "07:02", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:10", "timeOut": "07:02", "shiftCode": "O02"}], "PR003924": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "14:01", "timeOut": "22:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "12:25", "timeOut": "22:24", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR003937": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "22:26", "timeOut": "07:04", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:41", "timeOut": "07:18", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:41", "timeOut": "07:36", "shiftCode": "O02"}], "PR003949": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:30", "timeOut": "07:06", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:39", "timeOut": "07:05", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": "X02"}], "PR004012": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "12:22", "timeOut": "17:15", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:39", "timeOut": "07:00", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "12:57", "timeOut": "07:05", "shiftCode": ""}], "PR004020": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:42", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:47", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:53", "timeOut": "07:02", "shiftCode": ""}], "PR004023": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:40", "timeOut": "23:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:43", "timeOut": "23:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:37", "timeOut": "19:00", "shiftCode": ""}], "PR004029": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "11:04", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "12:39", "timeOut": "23:02", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "12:19", "timeOut": "23:05", "shiftCode": ""}], "PR004030": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:02", "timeOut": "15:04", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:33", "timeOut": "17:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:08", "timeOut": "17:00", "shiftCode": ""}], "PR004052": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:41", "timeOut": "18:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:48", "timeOut": "18:02", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:51", "timeOut": "18:01", "shiftCode": ""}], "PR004054": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:20", "timeOut": "00:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:39", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:18", "timeOut": "17:00", "shiftCode": ""}], "PR004108": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:53", "timeOut": "23:20", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:27", "timeOut": "15:13", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:47", "timeOut": "19:03", "shiftCode": ""}], "PR004134": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "09:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:33", "timeOut": "17:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "09:02", "timeOut": "17:00", "shiftCode": ""}], "PR004143": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}], "PR004156": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:20", "timeOut": "16:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:18", "timeOut": "19:07", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:18", "timeOut": "19:10", "shiftCode": ""}], "PR004159": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:26", "timeOut": "08:28", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "14:01", "timeOut": "23:04", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:56", "timeOut": "08:11", "shiftCode": "O02"}], "PR004163": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:50", "timeOut": "00:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:50", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:41", "timeOut": "17:00", "shiftCode": ""}], "PR004172": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}], "PR004197": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:54", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:56", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:58", "timeOut": "17:00", "shiftCode": ""}], "PR004236": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:28", "timeOut": "16:47", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:31", "timeOut": "19:33", "shiftCode": ""}], "PR004244": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "17:51", "timeOut": "09:05", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:53", "timeOut": "09:00", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:38", "timeOut": "00:20", "shiftCode": "Q01"}], "PR004256": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:55", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:57", "timeOut": "17:00", "shiftCode": ""}], "PR004302": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "17:29", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:27", "timeOut": "07:00", "shiftCode": "O02"}], "PR004383": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:40", "timeOut": "07:10", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "17:30", "timeOut": "07:08", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR004389": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:00", "timeOut": "08:17", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:00", "timeOut": "08:17", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR004390": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:29", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:19", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:39", "timeOut": "17:00", "shiftCode": ""}], "PR004396": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:49", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:00", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": "C02"}], "PR004411": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:58", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:59", "timeOut": "14:05", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:57", "timeOut": "17:05", "shiftCode": ""}], "PR004415": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "11:38", "timeOut": "17:04", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:41", "timeOut": "17:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "08:06", "timeOut": "17:02", "shiftCode": ""}], "PR004416": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:51", "timeOut": "17:03", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:46", "timeOut": "19:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:44", "timeOut": "19:01", "shiftCode": ""}], "PR004419": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:19", "timeOut": "21:12", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:06", "timeOut": "21:05", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:55", "timeOut": "17:07", "shiftCode": ""}], "PR004420": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:32", "timeOut": "21:24", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:57", "timeOut": "21:06", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:46", "timeOut": "21:06", "shiftCode": ""}], "PR004422": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:15", "timeOut": "17:22", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:59", "timeOut": "19:17", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "08:01", "timeOut": "19:12", "shiftCode": ""}], "PR004423": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:53", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:52", "timeOut": "19:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:40", "timeOut": "17:16", "shiftCode": ""}], "PR004424": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:36", "timeOut": "17:07", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:52", "timeOut": "19:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:40", "timeOut": "17:16", "shiftCode": ""}], "PR004431": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:55", "timeOut": "21:08", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:57", "timeOut": "21:15", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:55", "timeOut": "21:38", "shiftCode": ""}], "PR004432": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "14:03", "timeOut": "23:15", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "12:51", "timeOut": "23:24", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:03", "timeOut": "07:03", "shiftCode": "O02"}], "PR004450": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:25", "timeOut": "19:10", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:08", "timeOut": "10:07", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR004453": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:47", "timeOut": "07:00", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:00", "timeOut": "23:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "22:45", "timeOut": "07:22", "shiftCode": "O02"}], "PR004461": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:35", "timeOut": "15:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:50", "timeOut": "16:47", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:32", "timeOut": "16:47", "shiftCode": ""}], "PR004462": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:57", "timeOut": "18:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:55", "timeOut": "18:06", "shiftCode": ""}], "PR004463": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:49", "timeOut": "23:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:58", "timeOut": "23:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:47", "timeOut": "07:00", "shiftCode": ""}], "PR190001": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:55", "timeOut": "19:33", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:45", "timeOut": "19:10", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:48", "timeOut": "20:00", "shiftCode": ""}], "PR190005": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:08", "timeOut": "19:29", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:06", "timeOut": "19:34", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:32", "timeOut": "", "shiftCode": ""}], "PR190007": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "12:07", "timeOut": "23:20", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:00", "timeOut": "07:45", "shiftCode": ""}], "PR190014": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "14:06", "timeOut": "23:05", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:35", "timeOut": "19:09", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:54", "timeOut": "21:01", "shiftCode": ""}], "PR190023": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:02", "timeOut": "19:32", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:44", "timeOut": "21:15", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:32", "timeOut": "21:31", "shiftCode": ""}], "PR190027": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:11", "timeOut": "09:05", "shiftCode": "Q01"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "20:55", "timeOut": "07:57", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:34", "timeOut": "07:35", "shiftCode": "O02"}], "PR190031": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190032": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:30", "timeOut": "15:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:41", "timeOut": "15:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:36", "timeOut": "15:01", "shiftCode": ""}], "PR190034": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:57", "timeOut": "23:03", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:55", "timeOut": "19:16", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:51", "timeOut": "19:00", "shiftCode": ""}], "PR190035": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:24", "timeOut": "18:03", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:03", "timeOut": "19:05", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:03", "timeOut": "19:03", "shiftCode": ""}], "PR190037": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:00", "timeOut": "18:45", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:58", "timeOut": "17:46", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190041": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "12:07", "timeOut": "23:20", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:00", "timeOut": "17:45", "shiftCode": ""}], "PR190053": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:51", "timeOut": "17:05", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190055": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "17:54", "timeOut": "07:03", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "17:49", "timeOut": "07:04", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:43", "timeOut": "07:00", "shiftCode": "O02"}], "PR190061": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:57", "timeOut": "17:07", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:54", "timeOut": "14:51", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:03", "timeOut": "15:37", "shiftCode": ""}], "PR190064": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:57", "timeOut": "17:06", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:53", "timeOut": "17:05", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:46", "timeOut": "17:24", "shiftCode": ""}], "PR190066": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:58", "timeOut": "19:29", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:43", "timeOut": "19:45", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:57", "timeOut": "21:57", "shiftCode": ""}], "PR190067": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "18:54", "timeOut": "07:00", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:56", "timeOut": "07:53", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "19:42", "timeOut": "07:53", "shiftCode": "O02"}], "PR190070": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:42", "timeOut": "07:02", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:42", "timeOut": "23:03", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:46", "timeOut": "07:12", "shiftCode": ""}], "PR190073": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "10:40", "timeOut": "15:09", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "19:49", "timeOut": "07:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190076": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "07:00", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:32", "timeOut": "07:04", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "18:29", "timeOut": "07:00", "shiftCode": "O02"}], "PR190077": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:10", "timeOut": "15:11", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:49", "timeOut": "15:06", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:00", "timeOut": "19:26", "shiftCode": ""}], "PR190080": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:31", "timeOut": "07:01", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "18:05", "timeOut": "07:04", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190082": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "09:03", "timeOut": "19:20", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:52", "timeOut": "17:04", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "10:00", "timeOut": "19:54", "shiftCode": ""}], "PR190083": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:58", "timeOut": "23:03", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:59", "timeOut": "21:34", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:50", "timeOut": "18:16", "shiftCode": ""}], "PR190085": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:55", "timeOut": "17:06", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:40", "timeOut": "07:10", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190086": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:54", "timeOut": "17:05", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:51", "timeOut": "19:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:55", "timeOut": "17:05", "shiftCode": ""}], "PR190089": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:32", "timeOut": "15:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:30", "timeOut": "15:02", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190092": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:37", "timeOut": "17:02", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:37", "timeOut": "17:08", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:55", "timeOut": "19:02", "shiftCode": ""}], "PR190094": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:26", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:36", "timeOut": "19:17", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:51", "timeOut": "21:37", "shiftCode": ""}], "PR190099": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:37", "timeOut": "15:33", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:56", "timeOut": "15:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:48", "timeOut": "19:58", "shiftCode": ""}], "PR190103": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "14:00", "timeOut": "23:38", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190104": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "09:02", "timeOut": "18:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "09:00", "timeOut": "18:00", "shiftCode": ""}], "PR190105": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:43", "timeOut": "23:03", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:36", "timeOut": "15:03", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:45", "timeOut": "19:02", "shiftCode": ""}], "PR190107": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:52", "timeOut": "17:02", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "08:13", "timeOut": "17:02", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:30", "timeOut": "17:04", "shiftCode": ""}], "PR190111": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:44", "timeOut": "07:12", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "14:13", "timeOut": "07:23", "shiftCode": ""}], "PR190112": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:46", "timeOut": "18:13", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:17", "timeOut": "07:11", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190113": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:58", "timeOut": "15:18", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "22:09", "timeOut": "07:15", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190118": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:02", "timeOut": "17:12", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190119": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:47", "timeOut": "17:22", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:38", "timeOut": "19:15", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:47", "timeOut": "19:12", "shiftCode": ""}], "PR190120": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:46", "timeOut": "17:02", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:43", "timeOut": "17:58", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:31", "timeOut": "17:58", "shiftCode": ""}], "PR190121": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "09:56", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "09:55", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190122": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:40", "timeOut": "07:10", "shiftCode": "O02"}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:44", "timeOut": "07:12", "shiftCode": "O02"}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:40", "timeOut": "07:00", "shiftCode": "O02"}], "PR190123": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:31", "timeOut": "17:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:25", "timeOut": "19:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:28", "timeOut": "17:05", "shiftCode": ""}], "PR190124": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "21:40", "timeOut": "07:17", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "21:21", "timeOut": "07:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "19:12", "timeOut": "07:04", "shiftCode": ""}], "PR190125": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:50", "timeOut": "17:39", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:50", "timeOut": "17:03", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:48", "timeOut": "21:09", "shiftCode": ""}], "PR190128": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "12:38", "timeOut": "22:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "09:41", "timeOut": "22:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "12:27", "timeOut": "22:00", "shiftCode": ""}], "PR190129": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:44", "timeOut": "15:08", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:54", "timeOut": "15:11", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190131": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:47", "timeOut": "17:22", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:38", "timeOut": "19:15", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190132": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "09:58", "timeOut": "21:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "09:56", "timeOut": "21:45", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "09:04", "timeOut": "21:45", "shiftCode": ""}], "PR190133": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:12", "timeOut": "17:02", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:16", "timeOut": "17:04", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:08", "timeOut": "18:31", "shiftCode": ""}], "PR190134": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:56", "timeOut": "23:23", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:55", "timeOut": "23:02", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "13:52", "timeOut": "23:02", "shiftCode": ""}], "PR190135": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:43", "timeOut": "23:42", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:39", "timeOut": "15:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190136": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:15", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:30", "timeOut": "18:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:26", "timeOut": "17:02", "shiftCode": ""}], "PR190137": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "08:29", "timeOut": "17:10", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:01", "timeOut": "23:27", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "06:51", "timeOut": "19:02", "shiftCode": ""}], "PR190138": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "17:49", "timeOut": "07:08", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "17:13", "timeOut": "07:09", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "17:43", "timeOut": "07:17", "shiftCode": ""}], "PR190139": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "13:31", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "13:58", "timeOut": "23:01", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:47", "timeOut": "19:17", "shiftCode": ""}], "PR190140": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "06:15", "timeOut": "19:07", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "06:27", "timeOut": "19:04", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "07:04", "timeOut": "19:05", "shiftCode": ""}], "PR190141": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:16", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "07:40", "timeOut": "17:00", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190142": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "05:24", "timeOut": "19:06", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "05:23", "timeOut": "19:27", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "05:17", "timeOut": "19:01", "shiftCode": ""}], "PR190143": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}], "PR190144": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "07:00", "timeOut": "15:30", "shiftCode": "STD"}], "PR190145": [{"dateIn": "2026-05-06", "dateOut": "2026-05-06", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-07", "dateOut": "2026-05-07", "timeIn": "", "timeOut": "", "shiftCode": ""}, {"dateIn": "2026-05-08", "dateOut": "2026-05-08", "timeIn": "", "timeOut": "", "shiftCode": ""}]};
+  const TARGET_DATES = new Set(["2026-05-06", "2026-05-07", "2026-05-08"]);
+
+  let updated = 0, added = 0;
+  for (const [empId, newEntries] of Object.entries(NEW_LOGS)) {
+    if (!STATE.logs[empId]) {
+      STATE.logs[empId] = newEntries;
+      added++;
+    } else {
+      // Remove existing entries for the target dates, then add new ones
+      STATE.logs[empId] = STATE.logs[empId].filter(e => !TARGET_DATES.has(e.dateIn || e.date || ''));
+      STATE.logs[empId].push(...newEntries);
+      STATE.logs[empId].sort((a,b) => (a.dateIn||a.date||'').localeCompare(b.dateIn||b.date||''));
+      updated++;
+    }
+  }
+
+  fbSave();
+  if (STATE.selectedEmpId) renderLogRows();
+  updateDashboard();
+
+  toast('✅ Imported May 6–8 logs: ' + updated + ' updated, ' + added + ' new.', 'success');
+  btn.textContent = '✅ IMPORTED';
+  setTimeout(() => { btn.style.display = 'none'; }, 4000);
+}
+
+function doLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('btn-login').addEventListener('click', doLogin);
+document.getElementById('btn-logout').addEventListener('click', doLogout);
+
+// ─── TABS ────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const tabs = ['dashboard','masterfiles','employees','timelog','reports','leave'];
+  document.querySelectorAll('.nav-tab')[tabs.indexOf(name)].classList.add('active');
+  if (name === 'dashboard') updateDashboard();
+  if (name === 'reports') { populateReportFilter(); renderReportHistory(); }
+  if (name === 'leave') { populateLeaveEmpDropdowns(); renderLeaveTable(); }
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = '', 3000);
+}
+
+// ─── MASTERFILE: SHIFT ──────────────────────────────────────────
+
+// Parse time from description. Handles: "06:00-10:00 / 11:00-15:00", "7:00AM-3:00PM", "12:00NN-8:00PM"
+function parseTimesFromDesc(desc) {
+  if (!desc) return { timeIn: '', timeOut: '' };
+  function toHHMM(ts, mer) {
+    if (!ts) return '';
+    const p = ts.split(':');
+    let h = parseInt(p[0]), m = parseInt(p[1] || '0');
+    if (isNaN(h)) return '';
+    const x = (mer || '').toUpperCase();
+    if ((x === 'PM' || x === 'MN' || x === 'MID') && h < 12) h += 12;
+    if (x === 'AM' && h === 12) h = 0;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  }
+  // AM/PM style: "5:00AM-1:00PM", "12:00NN-8:00PM", "1:00PM-9:00PM"
+  const ap = desc.match(/(\d{1,2}:\d{2})\s*(AM|PM|NN)[-\s\/TO]+(\d{1,2}:\d{2})\s*(AM|PM|MN|MID)?/i);
+  if (ap) {
+    const tin = toHHMM(ap[1], ap[2]);
+    const tout = toHHMM(ap[3], ap[4] || 'PM');
+    if (tin && tout) return { timeIn: tin, timeOut: tout };
+  }
+  // 24hr style: grab all HH:MM tokens, first = timeIn, last = timeOut
+  const tokens = [];
+  const re = /(\d{1,2}):(\d{2})/g;
+  let m2;
+  while ((m2 = re.exec(desc)) !== null) {
+    tokens.push(String(parseInt(m2[1])).padStart(2,'0') + ':' + m2[2]);
+  }
+  if (tokens.length >= 2) return { timeIn: tokens[0], timeOut: tokens[tokens.length - 1] };
+  return { timeIn: '', timeOut: '' };
+}
+function loadShiftMaster(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!data.length) { toast('Empty file or unrecognized format', 'error'); return; }
+    STATE.shiftMaster = data.map(row => {
+      const rk = Object.keys(row);
+      const get = (...tries) => {
+        for (const t of tries) {
+          const k = rk.find(k => k.toLowerCase().replace(/[-_ ]/g,'').includes(t.toLowerCase().replace(/[-_ ]/g,'')));
+          if (k !== undefined) return String(row[k]).trim();
+        }
+        return '';
+      };
+      const desc = get('description','desc');
+      const code = get('shfcode','shift code','shiftcode','code');
+
+      // Skip hidden/header rows
+      if (!code || code === 'SHFCODE') return null;
+
+      // Priority 1: use SHF-IN / SHF-OUT columns directly
+      let timeIn  = normalizeTime(get('shf-in','shfin','shift in','sfin','sHFin'));
+      let timeOut = normalizeTime(get('shf-out','shfout','shift out','sfout','sHFout'));
+
+      // Priority 2: parse from description (handles both "HH:MM-HH:MM / HH:MM-HH:MM" and "H:MMAM-H:MMPM")
+      if (!timeIn || !timeOut) {
+        const parsed = parseTimesFromDesc(desc);
+        if (!timeIn)  timeIn  = parsed.timeIn;
+        if (!timeOut) timeOut = parsed.timeOut;
+      }
+
+      // Compute break duration from BRK-START and BRK-END columns
+      const brkStart = normalizeTime(get('brk-start','brkstart','break start','breakstart'));
+      const brkEnd   = normalizeTime(get('brk-end','brkend','break end','breakend'));
+      let breakDur = 1;
+      if (brkStart && brkEnd) {
+        const bsMin = toMinutes(brkStart), beMin = toMinutes(brkEnd);
+        if (bsMin !== null && beMin !== null && beMin > bsMin) {
+          breakDur = (beMin - bsMin) / 60;
+        }
+      }
+
+      const stdHours = parseFloat(get('wrk-hrs','wrkhrs','wrkhr','work hours','total hours','std','standard hours')) || 8;
+
+      return { code, desc, timeIn, timeOut, breakDur, stdHours };
+    }).filter(r => r && r.code && r.code !== 'SHFCODE');
+    const el = document.getElementById('shift-upload-status');
+    el.innerHTML = `<span class="badge badge-green">✓ ${STATE.shiftMaster.length} shift codes loaded</span>`;
+    document.getElementById('shift-save-wrap').style.display = 'block';
+    renderShiftPreview();
+    updateShiftDropdowns();
+    updateDashboard();
+    toast(`Loaded ${STATE.shiftMaster.length} shift codes`, 'success');
+    document.getElementById('status-shift').className = 'badge badge-green';
+    document.getElementById('status-shift').textContent = `${STATE.shiftMaster.length} codes`;
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderShiftPreview() {
+  const el = document.getElementById('shift-preview');
+  if (!STATE.shiftMaster.length) { el.innerHTML = ''; return; }
+  const rows = STATE.shiftMaster.map((s, i) =>
+    `<tr id="shift-row-${i}">
+      <td class="mono">${s.code}</td>
+      <td style="max-width:160px;white-space:normal;font-size:12px">${s.desc}</td>
+      <td>
+        <input type="text" id="shift-ti-${i}" value="${s.timeIn}" placeholder="HH:MM" maxlength="5"
+          style="padding:4px 8px;font-size:12px;width:80px;font-family:var(--mono)"
+          oninput="fmtMilInput(this)" onchange="saveShiftTime(${i})">
+      </td>
+      <td>
+        <input type="text" id="shift-to-${i}" value="${s.timeOut}" placeholder="HH:MM" maxlength="5"
+          style="padding:4px 8px;font-size:12px;width:80px;font-family:var(--mono)"
+          oninput="fmtMilInput(this)" onchange="saveShiftTime(${i})">
+      </td>
+      <td class="mono">${s.breakDur}h</td>
+      <td class="mono">${s.stdHours}h</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="deleteShiftCode(${i})" title="Delete">✕</button>
+      </td>
+    </tr>`
+  ).join('');
+  el.innerHTML = `<div class="table-wrap" style="max-height:300px;overflow-y:auto"><table>
+    <thead><tr><th>Code</th><th>Description</th><th>Time In</th><th>Time Out</th><th>Break</th><th>Std Hrs</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="text-muted" style="font-size:11px;margin-top:6px">Edit Time In / Out (HH:MM) — changes save automatically. Use <span style="color:var(--danger);font-weight:600">✕</span> to delete a shift.</p>`;
+}
+
+function saveShiftTime(idx) {
+  const tiInput = document.getElementById(`shift-ti-${idx}`);
+  const toInput = document.getElementById(`shift-to-${idx}`);
+  if (!tiInput || !toInput) return;
+  const timeIn = parseMilTime(tiInput.value);
+  const timeOut = parseMilTime(toInput.value);
+  STATE.shiftMaster[idx].timeIn = timeIn;
+  STATE.shiftMaster[idx].timeOut = timeOut;
+  updateShiftDropdowns();
+  fbSave();
+  toast(`✓ Shift ${STATE.shiftMaster[idx].code} updated`, 'success');
+}
+
+
+
+function deleteShiftCode(idx) {
+  const code = STATE.shiftMaster[idx]?.code;
+  if (!confirm(`Delete shift code "${code}"?`)) return;
+  STATE.shiftMaster.splice(idx, 1);
+  const statusEl = document.getElementById('shift-upload-status');
+  if (STATE.shiftMaster.length) {
+    statusEl.innerHTML = `<span class="badge badge-green">✓ ${STATE.shiftMaster.length} shift code(s) loaded</span>`;
+    document.getElementById('status-shift').className = 'badge badge-green';
+    document.getElementById('status-shift').textContent = `${STATE.shiftMaster.length} codes`;
+    document.getElementById('shift-save-wrap').style.display = 'block';
+  } else {
+    statusEl.innerHTML = '';
+    document.getElementById('status-shift').className = 'badge badge-gray';
+    document.getElementById('status-shift').textContent = 'Not Loaded';
+    document.getElementById('shift-save-wrap').style.display = 'none';
+  }
+  renderShiftPreview();
+  updateShiftDropdowns();
+  updateDashboard();
+  fbSave();
+  toast(`Shift code "${code}" deleted`, 'success');
+}
+
+// ─── SESSION PERSISTENCE (localStorage) ────────────────────────
+function saveShiftSession() {
+  fbSave();
+  toast('✓ Shift codes saved to record!', 'success');
+  document.getElementById('shift-upload-status').innerHTML =
+    `<span class="badge badge-green">✓ ${STATE.shiftMaster.length} shift codes — saved to record</span>`;
+}
+
+function saveEmpSession() {
+  fbSave();
+  toast('✓ Employee list saved to record!', 'success');
+  document.getElementById('emp-upload-status').innerHTML =
+    `<span class="badge badge-green">✓ ${STATE.employees.length} employees — saved to record</span>`;
+}
+
+function loadSavedSessions() {
+  // Load shift master
+  try {
+    const saved = localStorage.getItem('ppc_shiftMaster');
+    if (saved) {
+      STATE.shiftMaster = JSON.parse(saved);
+      if (STATE.shiftMaster.length) {
+        document.getElementById('shift-upload-status').innerHTML =
+          `<span class="badge badge-green">✓ ${STATE.shiftMaster.length} shift codes — restored from record</span>`;
+        document.getElementById('status-shift').className = 'badge badge-green';
+        document.getElementById('status-shift').textContent = `${STATE.shiftMaster.length} codes`;
+        document.getElementById('shift-save-wrap').style.display = 'block';
+        renderShiftPreview();
+        updateShiftDropdowns();
+      }
+    }
+  } catch(e) {}
+  // Load employees
+  try {
+    const saved = localStorage.getItem('ppc_employees');
+    if (saved) {
+      STATE.employees = JSON.parse(saved);
+      if (STATE.employees.length) {
+        document.getElementById('emp-upload-status').innerHTML =
+          `<span class="badge badge-green">✓ ${STATE.employees.length} employees — restored from record</span>`;
+        document.getElementById('status-emp').className = 'badge badge-green';
+        document.getElementById('status-emp').textContent = `${STATE.employees.length} employees`;
+        document.getElementById('emp-save-wrap').style.display = 'block';
+        renderEmpTable();
+        updateEmpDropdown();
+      }
+    }
+  } catch(e) {}
+  // Load coverage dates
+  try {
+    const savedCov = localStorage.getItem('ppc_coverage');
+    if (savedCov) {
+      const cov = JSON.parse(savedCov);
+      STATE.coverageFrom = cov.from || '';
+      STATE.coverageTo = cov.to || '';
+      if (STATE.coverageFrom) document.getElementById('cov-from').value = STATE.coverageFrom;
+      if (STATE.coverageTo) document.getElementById('cov-to').value = STATE.coverageTo;
+      if (STATE.coverageFrom && STATE.coverageTo) {
+        const el = document.getElementById('status-coverage');
+        el.className = 'badge badge-green';
+        el.textContent = STATE.coverageFrom + ' → ' + STATE.coverageTo;
+        updateCoverage();
+      }
+    }
+  } catch(e) {}
+  // Load time logs
+  try {
+    const savedLogs = localStorage.getItem('ppc_logs');
+    if (savedLogs) STATE.logs = JSON.parse(savedLogs);
+  } catch(e) {}
+  // Load report history
+  try {
+    const savedRpt = localStorage.getItem('ppc_reportHistory');
+    if (savedRpt) STATE.reportHistory = JSON.parse(savedRpt);
+  } catch(e) {}
+  // Load leave records
+  try {
+    const savedLeave = localStorage.getItem('ppc_leave');
+    if (savedLeave) STATE.leave = JSON.parse(savedLeave);
+  } catch(e) {}
+  updateDashboard();
+}
+
+
+
+
+// ─── FIREBASE SYNC ──────────────────────────────────────────────────
+const FB_URL = 'https://carltress-8263a-default-rtdb.firebaseio.com/ppc_timekeeping.json';
+
+let _fbSyncing = false;
+function setSyncDot(state){ // 'ok'|'syncing'|'error'
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if(!dot) return;
+  if(state==='ok'){
+    dot.style.background='#22c55e';
+    dot.title='Synced to cloud';
+    if(lbl){ lbl.textContent='SYNCED'; lbl.style.color='#22c55e'; }
+  } else if(state==='syncing'){
+    dot.style.background='#f59e0b';
+    dot.title='Syncing...';
+    if(lbl){ lbl.textContent='SYNCING'; lbl.style.color='#f59e0b'; }
+  } else {
+    dot.style.background='#ef4444';
+    dot.title='Sync error — offline mode';
+    if(lbl){ lbl.textContent='OFFLINE'; lbl.style.color='#ef4444'; }
+  }
+}
+
+let _fbAvailable = null; // null=unknown, true=ok, false=blocked
+
+async function checkFbAvailable(){
+  if(_fbAvailable !== null) return _fbAvailable;
+  try {
+    const r = await fetch(FB_URL, {method:'GET', signal: AbortSignal.timeout(6000)});
+    if(!r.ok && r.status !== 401 && r.status !== 403){
+      _fbAvailable = false;
+    } else {
+      const txt = await r.text();
+      // Only block on explicit domain allowlist errors (not permission errors which are rules-based)
+      _fbAvailable = !txt.includes('not in allowlist');
+    }
+  } catch(e){ _fbAvailable = false; }
+  if(!_fbAvailable){
+    setSyncDot('error');
+    const dot = document.getElementById('syncDot');
+    if(dot) dot.title = 'Offline mode — data saved locally only';
+  }
+  return _fbAvailable;
+}
+
+async function cloudPush(){
+  if(_fbSyncing) return;
+  _fbSyncing = true;
+  setSyncDot('syncing');
+  try {
+    const payload = {
+      shiftMaster: STATE.shiftMaster,
+      employees:   STATE.employees,
+      logs:        STATE.logs,
+      leave:       STATE.leave,
+      coverage:    {from: STATE.coverageFrom, to: STATE.coverageTo},
+      reportHistory: STATE.reportHistory,
+      _ts: Date.now()
+    };
+    const r = await fetch(FB_URL, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    try { localStorage.setItem('ppc_push_ts', String(payload._ts)); } catch(e){}
+    _fbAvailable = true;
+    setSyncDot('ok');
+  } catch(err){
+    setSyncDot('error');
+  }
+  _fbSyncing = false;
+}
+
+async function cloudPull(){
+  setSyncDot('syncing');
+  try {
+    const r = await fetch(FB_URL, {signal: AbortSignal.timeout(8000)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const txt = await r.text();
+    if(txt.includes('not in allowlist')){
+      setSyncDot('error');
+      return;
+    }
+    const data = JSON.parse(txt);
+    if(!data){ setSyncDot('ok'); return; }
+
+    // ── Timestamp guard: don't overwrite local edits made after last push ──
+    const localTs = parseInt(localStorage.getItem('ppc_push_ts') || '0');
+    const remoteTs = data._ts || 0;
+    const isNewer = remoteTs >= localTs;
+
+    if(Array.isArray(data.shiftMaster)) STATE.shiftMaster = data.shiftMaster;
+    if(Array.isArray(data.employees))   STATE.employees   = data.employees;
+    // Only replace logs/leave/reports if remote data is newer than our last push
+    if(isNewer){
+      if(data.logs && typeof data.logs==='object') {
+        // Deduplicate each employee's log by dateIn before storing
+        const cleanLogs = {};
+        Object.keys(data.logs).forEach(empId => {
+          const seen = new Set();
+          cleanLogs[empId] = (data.logs[empId] || []).filter(row => {
+            const key = row.dateIn || row.date || '';
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        });
+        STATE.logs = cleanLogs;
+      }
+      if(Array.isArray(data.leave))         STATE.leave         = data.leave;
+      if(Array.isArray(data.reportHistory)) STATE.reportHistory = data.reportHistory;
+    }
+    if(data.coverage){
+      STATE.coverageFrom = data.coverage.from || '';
+      STATE.coverageTo   = data.coverage.to   || '';
+      if (STATE.coverageFrom) document.getElementById('cov-from').value = STATE.coverageFrom;
+      if (STATE.coverageTo)   document.getElementById('cov-to').value   = STATE.coverageTo;
+      if (STATE.coverageFrom && STATE.coverageTo) updateCoverage();
+    }
+    // Refresh dropdowns with restored data
+    if (STATE.shiftMaster.length) updateShiftDropdowns();
+    if (STATE.employees.length)   { updateEmpDropdown(); renderEmpTable(); }
+    // Re-render the currently open employee log so UI matches storage,
+    // BUT only if the user is not actively typing inside the log table
+    const logCard = document.getElementById('log-entry-card');
+    const activeEl = document.activeElement;
+    const userIsTypingInLog = logCard && logCard.contains(activeEl) &&
+      (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT' || activeEl.tagName === 'TEXTAREA');
+    if (STATE.selectedEmpId && logCard?.style.display !== 'none' && !userIsTypingInLog) {
+      renderLogRows();
+    }
+    try {
+      localStorage.setItem('ppc_shiftMaster',    JSON.stringify(STATE.shiftMaster));
+      localStorage.setItem('ppc_employees',       JSON.stringify(STATE.employees));
+      localStorage.setItem('ppc_logs',            JSON.stringify(STATE.logs));
+      localStorage.setItem('ppc_leave',           JSON.stringify(STATE.leave));
+      localStorage.setItem('ppc_reportHistory',   JSON.stringify(STATE.reportHistory));
+      localStorage.setItem('ppc_coverage',        JSON.stringify({from:STATE.coverageFrom, to:STATE.coverageTo}));
+    } catch(e){}
+    _fbAvailable = true;
+    setSyncDot('ok');
+    updateDashboard();
+  } catch(err){
+    setSyncDot('error');
+  }
+}
+
+function fbSave(){
+  // Save to localStorage first (fast), then push to Firebase
+  try {
+    localStorage.setItem('ppc_logs',          JSON.stringify(STATE.logs));
+    localStorage.setItem('ppc_shiftMaster',   JSON.stringify(STATE.shiftMaster));
+    localStorage.setItem('ppc_employees',     JSON.stringify(STATE.employees));
+    localStorage.setItem('ppc_leave',         JSON.stringify(STATE.leave));
+    localStorage.setItem('ppc_reportHistory', JSON.stringify(STATE.reportHistory));
+    localStorage.setItem('ppc_coverage',      JSON.stringify({from:STATE.coverageFrom, to:STATE.coverageTo}));
+  } catch(e){}
+  cloudPush();
+}
+
+function deduplicateAllLogs() {
+  let changed = false;
+  Object.keys(STATE.logs).forEach(empId => {
+    const rows = STATE.logs[empId] || [];
+    const seen = new Map();
+    rows.forEach(r => {
+      const key = r.dateIn || r.date || '';
+      if (!key) return;
+      const existing = seen.get(key);
+      if (!existing || (!existing.timeIn && r.timeIn)) seen.set(key, r);
+    });
+    const cleaned = [...seen.values()].sort((a,b) => (a.dateIn||a.date||'').localeCompare(b.dateIn||b.date||''));
+    if (cleaned.length !== rows.length) { STATE.logs[empId] = cleaned; changed = true; }
+  });
+  if (changed) fbSave();
+}
+
+// Poll every 15 seconds
+setInterval(cloudPull, 15000);
+// Push preloaded data on first run
+setTimeout(()=>{ if(STATE.employees.length) cloudPush(); }, 3000);
+
+// ─── MASTERFILE: EMPLOYEES ──────────────────────────────────────
+function loadEmpMaster(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(ev.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    STATE.employees = data.map(row => {
+      const rk = Object.keys(row);
+      const get = (...tries) => {
+        for (const t of tries) {
+          const k = rk.find(k => k.toLowerCase().includes(t));
+          if (k !== undefined) return String(row[k]).trim();
+        }
+        return '';
+      };
+      return { id: get('id','emp id','empid','employee id'), name: get('name','emp name','empname','employee name') };
+    }).filter(r => r.id);
+    // Dedup
+    const seen = new Set();
+    STATE.employees = STATE.employees.filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true; });
+    document.getElementById('emp-upload-status').innerHTML =
+      `<span class="badge badge-green">✓ ${STATE.employees.length} employees loaded</span>`;
+    document.getElementById('status-emp').className = 'badge badge-green';
+    document.getElementById('status-emp').textContent = `${STATE.employees.length} employees`;
+    document.getElementById('emp-save-wrap').style.display = 'block';
+    renderEmpTable();
+    updateEmpDropdown();
+    updateDashboard();
+    toast(`Loaded ${STATE.employees.length} employees`, 'success');
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ─── EMPLOYEES MANAGEMENT ───────────────────────────────────────
+function addEmployee() {
+  const id = document.getElementById('new-emp-id').value.trim();
+  const name = document.getElementById('new-emp-name').value.trim();
+  if (!id || !name) { toast('Enter both Employee ID and Name', 'error'); return; }
+  if (STATE.employees.find(e => e.id === id)) { toast('Employee ID already exists', 'error'); return; }
+  STATE.employees.push({ id, name });
+  document.getElementById('new-emp-id').value = '';
+  document.getElementById('new-emp-name').value = '';
+  renderEmpTable();
+  updateEmpDropdown();
+  updateDashboard();
+  toast(`Added: ${name}`, 'success');
+}
+
+function deleteEmployee(id) {
+  if (!confirm(`Delete employee ${id}?`)) return;
+  STATE.employees = STATE.employees.filter(e => e.id !== id);
+  delete STATE.logs[id];
+  renderEmpTable();
+  updateEmpDropdown();
+  updateDashboard();
+  toast('Employee removed', 'success');
+}
+
+function renderEmpTable() {
+  const q = document.getElementById('emp-search').value.toLowerCase();
+  const list = STATE.employees.filter(e =>
+    e.id.toLowerCase().includes(q) || e.name.toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('emp-tbody');
+  if (!list.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No employees found</td></tr>`; return; }
+  tbody.innerHTML = list.map((e, i) =>
+    `<tr>
+      <td class="text-muted">${i+1}</td>
+      <td class="mono">${e.id}</td>
+      <td>${e.name}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')">✕ Remove</button></td>
+    </tr>`
+  ).join('');
+}
+
+// ─── SORTED EMPLOYEES (by last name A→Z) ─────────────────────────
+function sortedEmps() {
+  return [...STATE.employees].sort((a, b) => {
+    const lastName = n => n.split(/[\s,]+/)[0] || '';
+    return lastName(a.name).localeCompare(lastName(b.name));
+  });
+}
+
+function updateEmpDropdown() {
+  const sel = document.getElementById('emp-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select Employee —</option>' +
+    sortedEmps().map(e => `<option value="${e.id}">${e.name} — ${e.id}</option>`).join('');
+  if (cur) sel.value = cur;
+  // reports filter
+  populateReportFilter();
+}
+
+// ─── TIMELOG LASTNAME SEARCH ─────────────────────────────────────
+function filterTimelogEmpByLastname(query) {
+  const dropdown = document.getElementById('timelog-search-dropdown');
+  if (!query.trim()) { dropdown.style.display = 'none'; return; }
+  const q = query.trim().toLowerCase();
+  // Employee names are stored as "LASTNAME FIRSTNAME MIDDLENAME" (all caps)
+  // Match if the first word (lastname) starts with query, or anywhere in name
+  const matches = STATE.employees.filter(e => {
+    const nameLower = e.name.toLowerCase();
+    const parts = nameLower.split(/[\s,]+/);
+    // Primary: last name (first token) starts with query
+    if (parts[0] && parts[0].startsWith(q)) return true;
+    // Secondary: any word starts with query
+    return parts.some(p => p.startsWith(q));
+  }).slice(0, 12);
+
+  if (!matches.length) {
+    dropdown.innerHTML = `<div style="padding:8px 12px;color:#aaa;font-size:12px">No employees found</div>`;
+    dropdown.style.display = 'block';
+    return;
+  }
+  dropdown.innerHTML = matches.map(e => {
+    const lastName = e.name.split(/[\s,]+/)[0];
+    const rest = e.name.slice(lastName.length);
+    return `<div onclick="selectTimelogEmpFromSearch('${e.id}')" style="padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid #DEEAF1;display:flex;align-items:center;gap:8px;transition:background 0.1s" onmouseover="this.style.background='#DEEAF1'" onmouseout="this.style.background=''">
+      <span style="font-family:var(--mono);font-size:11px;background:#DEEAF1;border:1px solid #BDD7EE;border-radius:2px;padding:1px 6px;color:var(--navy-header)">${e.id}</span>
+      <span><strong>${lastName}</strong>${rest}</span>
+    </div>`;
+  }).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectTimelogEmpFromSearch(empId) {
+  const dropdown = document.getElementById('timelog-search-dropdown');
+  dropdown.style.display = 'none';
+  const emp = STATE.employees.find(e => e.id === empId);
+  if (emp) {
+    document.getElementById('timelog-lastname-search').value = emp.name.split(/[\s,]+/)[0];
+  }
+  const sel = document.getElementById('emp-select');
+  sel.value = empId;
+  onEmpSelect();
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const container = document.getElementById('timelog-search-dropdown');
+  const input = document.getElementById('timelog-lastname-search');
+  if (container && input && !container.contains(e.target) && e.target !== input) {
+    container.style.display = 'none';
+  }
+});
+
+
+function updateCoverage() {
+  STATE.coverageFrom = document.getElementById('cov-from').value;
+  STATE.coverageTo = document.getElementById('cov-to').value;
+  try { localStorage.setItem('ppc_coverage', JSON.stringify({from: STATE.coverageFrom, to: STATE.coverageTo})); } catch(e) {}
+  const el = document.getElementById('status-coverage');
+  if (STATE.coverageFrom && STATE.coverageTo) {
+    el.className = 'badge badge-green';
+    el.textContent = `${STATE.coverageFrom} → ${STATE.coverageTo}`;
+  }
+
+  // ── Coverage summary bar ──
+  const bar = document.getElementById('cov-summary-bar');
+  if (bar) {
+    if (STATE.coverageFrom && STATE.coverageTo) {
+      const fmtD = d => {
+        const [y,m,day] = d.split('-');
+        const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1];
+        return `${mo} ${parseInt(day)}, ${y}`;
+      };
+      const days = Math.round((new Date(STATE.coverageTo) - new Date(STATE.coverageFrom)) / 86400000) + 1;
+      document.getElementById('cov-summary-from').textContent = fmtD(STATE.coverageFrom);
+      document.getElementById('cov-summary-to').textContent   = fmtD(STATE.coverageTo);
+      document.getElementById('cov-summary-days').textContent = `${days} day${days !== 1 ? 's' : ''}`;
+      bar.style.display = 'flex';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
+  // Refresh coverage banner if an employee is already shown
+  if (STATE.selectedEmpId) {
+    const banner = document.getElementById('log-coverage-banner');
+    const rangeLabel = document.getElementById('log-coverage-range');
+    if (banner && rangeLabel) {
+      if (STATE.coverageFrom && STATE.coverageTo) {
+        const fmt = d => { const [y,m,day] = d.split('-'); return `${m}/${day}/${y}`; };
+        rangeLabel.textContent = fmt(STATE.coverageFrom) + '  →  ' + fmt(STATE.coverageTo);
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+    // Auto-fill new coverage dates if log is empty
+    if (STATE.coverageFrom && STATE.coverageTo && (!STATE.logs[STATE.selectedEmpId] || STATE.logs[STATE.selectedEmpId].length === 0)) {
+      _autoFillCoverage();
+    }
+  }
+}
+
+function onEmpSelect() {
+  const val = document.getElementById('emp-select').value;
+  STATE.selectedEmpId = val;
+  const nameDisplay = document.getElementById('emp-name-display');
+  if (val) {
+    const emp = STATE.employees.find(e => e.id === val);
+    if (emp) {
+      nameDisplay.style.cssText = 'display:flex!important;align-items:center;gap:8px;margin-top:8px';
+      nameDisplay.innerHTML = `<span class="text-muted" style="font-size:12px">Employee:</span><span class="badge badge-blue">${emp.name}</span>`;
+      document.getElementById('status-selected').className = 'badge badge-blue';
+      document.getElementById('status-selected').textContent = emp.name;
+    }
+    renderLogEntryCard();
+  } else {
+    nameDisplay.style.cssText = 'display:none!important';
+    document.getElementById('log-entry-card').style.display = 'none';
+  }
+}
+
+// ─── SHIFT DROPDOWNS ─────────────────────────────────────────────
+function updateShiftDropdowns() {
+  document.querySelectorAll('.shift-select').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Shift —</option>' +
+      STATE.shiftMaster.map(s => `<option value="${s.code}">${s.code} — ${s.desc}</option>`).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+// ─── LOG ENTRY ───────────────────────────────────────────────────
+function renderLogEntryCard() {
+  if (!STATE.selectedEmpId) return;
+  const emp = STATE.employees.find(e => e.id === STATE.selectedEmpId);
+  document.getElementById('log-entry-card').style.display = 'block';
+  document.getElementById('log-emp-label').textContent = emp ? `${emp.id} — ${emp.name}` : STATE.selectedEmpId;
+
+  // Show coverage date range banner
+  const banner = document.getElementById('log-coverage-banner');
+  const rangeLabel = document.getElementById('log-coverage-range');
+  if (STATE.coverageFrom && STATE.coverageTo) {
+    const fmt = d => { const [y,m,day] = d.split('-'); return `${m}/${day}/${y}`; };
+    rangeLabel.textContent = `${fmt(STATE.coverageFrom)}  \u2192  ${fmt(STATE.coverageTo)}`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  if (!STATE.logs[STATE.selectedEmpId]) STATE.logs[STATE.selectedEmpId] = [];
+
+  // Auto-fill coverage dates if none exist yet
+  if (STATE.coverageFrom && STATE.coverageTo && STATE.logs[STATE.selectedEmpId].length === 0) {
+    _autoFillCoverage();
+  } else {
+    renderLogRows();
+  }
+}
+
+function renderLogRows() {
+  const rows = STATE.logs[STATE.selectedEmpId] || [];
+  const container = document.getElementById('log-rows-container');
+
+  // Gather leave entries for this employee
+  const empLeave = STATE.leave.filter(l => l.empId === STATE.selectedEmpId);
+  // Build a map: date -> leave entry (use last one if multiple per day)
+  const leaveByDate = {};
+  empLeave.forEach(l => { leaveByDate[l.date] = l; });
+
+  if (!rows.length && !Object.keys(leaveByDate).length) {
+    container.innerHTML = `<div class="empty-state">No entries. Set coverage dates above to auto-populate.</div>`;
+    recalcTotals();
+    return;
+  }
+  container.innerHTML = rows.map((r, i) => buildLogRow(r, i, leaveByDate)).join('');
+  updateShiftDropdowns();
+  recalcTotals();
+}
+
+function buildLogRow(r, i, leaveByDate) {
+  leaveByDate = leaveByDate || {};
+  const shift = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+  const comp = computeRow(r, shift);
+
+  // Day of week from date
+  const dateIn = r.dateIn || r.date || '';
+  const dayStr = dateIn ? new Date(dateIn + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase() : '—';
+
+  // Shift info — code only
+  const shiftCode = r.shiftCode || '';
+  const shftHrs = shift ? shift.stdHours.toFixed(2) : (shiftCode ? '—' : '.00');
+
+  // Check if this date has a leave entry
+  const leaveEntry = dateIn ? leaveByDate[dateIn] : null;
+  const leaveTypeLabel = { VL:'VL', SL:'SL', EL:'EL', ML:'ML', PL:'PL', OL:'OL' };
+  const leaveTypeFull  = { VL:'Vacation Leave', SL:'Sick Leave', EL:'Emergency Leave', ML:'Maternity Leave', PL:'Paternity Leave', OL:'Other Leave' };
+
+  // Remark — if leave exists on this date, show leave type; else normal logic
+  let remark = '';
+  let remarkColor = '';
+  let isOnLeave = false;
+
+  if (leaveEntry && !r.timeIn && !r.timeOut) {
+    // Fully on leave (no actual time log)
+    isOnLeave = true;
+    remark = leaveTypeLabel[leaveEntry.type] || leaveEntry.type;
+    remarkColor = 'color:var(--info)';
+  } else if (leaveEntry && (r.timeIn || r.timeOut)) {
+    // Has actual time + leave (partial leave / half-day)
+    remark = (leaveTypeLabel[leaveEntry.type] || leaveEntry.type) + '*';
+    remarkColor = 'color:var(--info)';
+  } else if (!r.timeIn && !r.timeOut) {
+    remark = 'ABSENT';
+    remarkColor = 'color:var(--danger)';
+  } else if (r.timeIn && r.timeOut) {
+    remark = 'PRESENT';
+    remarkColor = 'color:var(--success)';
+  } else {
+    remark = 'INCOMPLETE';
+    remarkColor = 'color:var(--warn)';
+  }
+
+  // Computed values
+  const regHrs  = isOnLeave ? leaveEntry.hours.toFixed(2) : (comp.hours > 0 ? comp.hours.toFixed(2) : '.00');
+  const otHrs   = comp.ot > 0 ? (comp.ot / 60).toFixed(2) : '—';
+  const lateHrs = comp.late > 0 ? (comp.late / 60).toFixed(2) : '—';
+  const utHrs   = comp.ut > 0 ? (comp.ut / 60).toFixed(2) : '—';
+  // Abs hrs: only if absent AND no leave covering it
+  const absHrs  = (!r.timeIn && !r.timeOut && shift && !leaveEntry) ? shift.stdHours.toFixed(2) : '—';
+
+  const hoursColor = (isOnLeave || comp.hours > 0) ? 'color:var(--success)' : 'color:var(--text3)';
+  const otColor    = comp.ot > 0 ? 'color:var(--info)' : 'color:var(--text3)';
+  const lateColor  = comp.late > 0 ? 'color:var(--danger)' : 'color:var(--text3)';
+  const utColor    = comp.ut > 0 ? 'color:var(--warn)' : 'color:var(--text3)';
+  const absColor   = absHrs !== '—' ? 'color:var(--accent)' : 'color:var(--text3)';
+
+  // Leave badge tooltip
+  const leaveTooltip = leaveEntry ? ` title="${leaveTypeFull[leaveEntry.type]||leaveEntry.type}${leaveEntry.remarks ? ' — '+leaveEntry.remarks : ''}"` : '';
+
+  // Row background tint if on leave
+  const rowBg = isOnLeave ? 'background:rgba(37,99,235,0.04);' : (leaveEntry ? 'background:rgba(37,99,235,0.02);' : '');
+
+  const shiftOpts = '<option value="">— Shift —</option>' +
+    STATE.shiftMaster.map(s => `<option value="${s.code}" ${r.shiftCode===s.code?'selected':''}>${s.code}${s.desc ? ' — '+s.desc : ''}</option>`).join('');
+
+  return `<div class="log-row" data-idx="${i}" style="${rowBg}">
+    <input type="date" value="${dateIn}" onchange="updateLog(${i},'dateIn',this.value)" style="padding:4px 5px;font-size:11px;width:100%">
+    <div class="log-computed" style="font-size:11px;color:var(--text2);font-weight:600">${dayStr}</div>
+    <select class="shift-select" onchange="updateLog(${i},'shiftCode',this.value)" style="padding:4px 5px;font-size:11px;width:100%">${shiftOpts}</select>
+    <div class="log-computed" style="font-size:11px;color:var(--text2)">${shftHrs}</div>
+    <input type="date" value="${dateIn}" onchange="updateLog(${i},'dateIn',this.value)" style="padding:4px 5px;font-size:10px;width:100%;border-color:#9DC3E6">
+    <input type="text" value="${r.timeIn||''}" placeholder="HH:MM" maxlength="5" onchange="updateLog(${i},'timeIn',parseMilTime(this.value))" oninput="fmtMilInput(this);if(STATE.logs[STATE.selectedEmpId]&&STATE.logs[STATE.selectedEmpId][${i}])STATE.logs[STATE.selectedEmpId][${i}].timeIn=this.value" style="padding:4px 5px;font-size:11px;font-family:var(--mono);letter-spacing:1px;width:100%">
+    <input type="date" value="${r.dateOut||dateIn}" onchange="updateLog(${i},'dateOut',this.value)" style="padding:4px 5px;font-size:10px;width:100%;border-color:${(r.dateOut && r.dateOut !== dateIn)?'#ED7D31':'#9DC3E6'};${(r.dateOut && r.dateOut !== dateIn)?'background:#FFF8F0':''}">
+    <input type="text" value="${r.timeOut||''}" placeholder="HH:MM" maxlength="5" onchange="updateLog(${i},'timeOut',parseMilTime(this.value))" oninput="fmtMilInput(this);if(STATE.logs[STATE.selectedEmpId]&&STATE.logs[STATE.selectedEmpId][${i}])STATE.logs[STATE.selectedEmpId][${i}].timeOut=this.value" style="padding:4px 5px;font-size:11px;font-family:var(--mono);letter-spacing:1px;width:100%">
+    <div class="log-computed" style="font-size:11px;font-weight:600;${remarkColor}"${leaveTooltip}>${remark}${leaveEntry ? ' <span style="font-size:9px;opacity:0.7;font-weight:400">('+leaveEntry.hours+'h)</span>' : ''}</div>
+    <div class="log-computed" style="${hoursColor};font-size:11px">${regHrs}</div>
+    <div class="log-computed" style="${otColor};font-size:11px">${otHrs}</div>
+    <div class="log-computed" style="${lateColor};font-size:11px">${lateHrs}</div>
+    <div class="log-computed" style="${utColor};font-size:11px">${utHrs}</div>
+    <div class="log-computed" style="${absColor};font-size:11px">${absHrs}</div>
+    <button class="remove-log" onclick="removeLog(${i})">✕</button>
+  </div>`;
+}
+
+function addLogRow() {
+  if (!STATE.selectedEmpId) { toast('Select an employee first', 'error'); return; }
+  if (!STATE.logs[STATE.selectedEmpId]) STATE.logs[STATE.selectedEmpId] = [];
+  const rows = STATE.logs[STATE.selectedEmpId];
+  let nextDate = '';
+  if (rows.length) {
+    const last = rows[rows.length-1].dateIn || rows[rows.length-1].date;
+    if (last) {
+      const d = new Date(last);
+      d.setDate(d.getDate()+1);
+      nextDate = d.toISOString().slice(0,10);
+    }
+  } else if (STATE.coverageFrom) {
+    nextDate = STATE.coverageFrom;
+  }
+  rows.push({ dateIn: nextDate, dateOut: nextDate, timeIn: '', timeOut: '', shiftCode: '' });
+  renderLogRows();
+}
+
+function _autoFillCoverage() {
+  if (!STATE.selectedEmpId || !STATE.coverageFrom || !STATE.coverageTo) { renderLogRows(); return; }
+  const from = new Date(STATE.coverageFrom);
+  const to = new Date(STATE.coverageTo);
+  if (to < from) { renderLogRows(); return; }
+  if (!STATE.logs[STATE.selectedEmpId]) STATE.logs[STATE.selectedEmpId] = [];
+  const rows = STATE.logs[STATE.selectedEmpId];
+
+  // Deduplicate existing rows first — keep only one row per dateIn (latest wins)
+  const dedupMap = new Map();
+  rows.forEach(r => {
+    const key = r.dateIn || r.date || '';
+    if (!key) return;
+    // Prefer rows that have actual time data over blank ones
+    const existing = dedupMap.get(key);
+    if (!existing || (!existing.timeIn && r.timeIn)) {
+      dedupMap.set(key, r);
+    }
+  });
+
+  // Add missing dates in coverage range
+  const d = new Date(from);
+  while (d <= to) {
+    const dateStr = d.toISOString().slice(0,10);
+    if (!dedupMap.has(dateStr)) {
+      dedupMap.set(dateStr, { dateIn: dateStr, dateOut: dateStr, timeIn: '', timeOut: '', shiftCode: '' });
+    }
+    d.setDate(d.getDate()+1);
+  }
+
+  // Rebuild sorted array
+  STATE.logs[STATE.selectedEmpId] = [...dedupMap.values()]
+    .sort((a,b) => (a.dateIn||a.date||'').localeCompare(b.dateIn||b.date||''));
+
+  renderLogRows();
+  saveLogsToStorage();
+}
+
+function clearAllLogs() {
+  if (!STATE.selectedEmpId) return;
+  if (!confirm('Clear all time log entries for this employee?')) return;
+  STATE.logs[STATE.selectedEmpId] = [];
+  renderLogRows();
+  updateDashboard();
+  saveLogsToStorage();
+  toast('All entries cleared', 'success');
+}
+
+function fillCoverageDates() {
+  _autoFillCoverage();
+}
+
+function updateLog(idx, field, val) {
+  if (!STATE.selectedEmpId) return;
+  const rows = STATE.logs[STATE.selectedEmpId];
+  if (!rows || !rows[idx]) return;
+  rows[idx][field] = val;
+  // When dateIn changes: sync the Time-In Date mirror (input[1]) and auto-set dateOut if it was same-day
+  if (field === 'dateIn') {
+    const r = rows[idx];
+    // Sync the mirror date input (column 5 = inputs[1])
+    const rowEl2 = document.querySelector(`.log-row[data-idx="${idx}"]`);
+    if (rowEl2) {
+      const dateInputs = rowEl2.querySelectorAll('input[type=date]');
+      if (dateInputs[1]) dateInputs[1].value = val;
+      // If dateOut was empty or same as old dateIn, update it too
+      if (!r.dateOut || r.dateOut === '' || r.dateOut === val) {
+        rows[idx].dateOut = val;
+        if (dateInputs[2]) {
+          dateInputs[2].value = val;
+          dateInputs[2].style.borderColor = '#9DC3E6';
+          dateInputs[2].style.background = '';
+        }
+      }
+    }
+  }
+  // When dateOut changes: update highlight to flag overnight
+  if (field === 'dateOut') {
+    const r = rows[idx];
+    const rowEl2 = document.querySelector(`.log-row[data-idx="${idx}"]`);
+    if (rowEl2) {
+      const dateInputs = rowEl2.querySelectorAll('input[type=date]');
+      const isOvernight = val && r.dateIn && val !== r.dateIn;
+      if (dateInputs[2]) {
+        dateInputs[2].style.borderColor = isOvernight ? '#ED7D31' : '#9DC3E6';
+        dateInputs[2].style.background  = isOvernight ? '#FFF8F0' : '';
+      }
+    }
+  }
+  const rowEl = document.querySelector(`.log-row[data-idx="${idx}"]`);
+  if (rowEl) {
+    const r = rows[idx];
+    const shift = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+    const comp = computeRow(r, shift);
+    const cells = rowEl.querySelectorAll('.log-computed');
+    // cells[0]=day, [1]=shftHrs, [2]=remark, [3]=regHrs, [4]=OT, [5]=late, [6]=ut, [7]=abs
+    const dateIn = r.dateIn || r.date || '';
+    const dayStr = dateIn ? new Date(dateIn + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase() : '—';
+    if (cells[0]) cells[0].textContent = dayStr;
+    const shftHrs = shift ? shift.stdHours.toFixed(2) : '.00';
+    if (cells[1]) cells[1].textContent = shftHrs;
+    // Build leave map for remark display
+    const empLeave2 = STATE.leave.filter(l => l.empId === STATE.selectedEmpId);
+    const leaveByDate2 = {};
+    empLeave2.forEach(l => { leaveByDate2[l.date] = l; });
+    const dateIn2 = r.dateIn || r.date || '';
+    const leaveEntry2 = dateIn2 ? leaveByDate2[dateIn2] : null;
+    const leaveTypeLabel2 = { VL:'VL', SL:'SL', EL:'EL', ML:'ML', PL:'PL', OL:'OL' };
+    let remark, remarkCol;
+    if (leaveEntry2 && !r.timeIn && !r.timeOut) {
+      remark = (leaveTypeLabel2[leaveEntry2.type]||leaveEntry2.type) + ' <span style="font-size:9px;opacity:0.7;font-weight:400">('+leaveEntry2.hours+'h)</span>';
+      remarkCol = 'var(--info)';
+    } else if (leaveEntry2 && (r.timeIn || r.timeOut)) {
+      remark = (leaveTypeLabel2[leaveEntry2.type]||leaveEntry2.type) + '* <span style="font-size:9px;opacity:0.7;font-weight:400">('+leaveEntry2.hours+'h)</span>';
+      remarkCol = 'var(--info)';
+    } else {
+      remark = (!r.timeIn && !r.timeOut) ? 'ABSENT' : (r.timeIn && r.timeOut) ? 'PRESENT' : 'INCOMPLETE';
+      remarkCol = remark==='ABSENT'?'var(--danger)':remark==='PRESENT'?'var(--success)':'var(--warn)';
+    }
+    if (cells[2]) { cells[2].innerHTML = remark; cells[2].style.color = remarkCol; }
+    if (cells[3]) { cells[3].textContent = comp.hours > 0 ? comp.hours.toFixed(2) : '.00'; cells[3].style.color = comp.hours > 0 ? 'var(--success)' : 'var(--text3)'; }
+    if (cells[4]) { cells[4].textContent = comp.ot > 0 ? (comp.ot/60).toFixed(2) : '—'; cells[4].style.color = comp.ot > 0 ? 'var(--info)' : 'var(--text3)'; }
+    if (cells[5]) { cells[5].textContent = comp.late > 0 ? (comp.late/60).toFixed(2) : '—'; cells[5].style.color = comp.late > 0 ? 'var(--danger)' : 'var(--text3)'; }
+    if (cells[6]) { cells[6].textContent = comp.ut > 0 ? (comp.ut/60).toFixed(2) : '—'; cells[6].style.color = comp.ut > 0 ? 'var(--warn)' : 'var(--text3)'; }
+    const absHrs = (!r.timeIn && !r.timeOut && shift) ? shift.stdHours.toFixed(2) : '—';
+    if (cells[7]) { cells[7].textContent = absHrs; cells[7].style.color = absHrs !== '—' ? 'var(--accent)' : 'var(--text3)'; }
+  }
+  recalcTotals();
+  updateDashboard();
+  saveLogsToStorage();
+}
+
+function removeLog(idx) {
+  if (!STATE.selectedEmpId) return;
+  STATE.logs[STATE.selectedEmpId].splice(idx, 1);
+  renderLogRows();
+  saveLogsToStorage();
+}
+
+// ─── MILITARY TIME HELPERS ───────────────────────────────────────
+function parseMilTime(val) {
+  if (!val) return '';
+  val = val.replace(/[^0-9]/g, '');
+  if (val.length === 3) val = '0' + val;
+  if (val.length === 4) return val.slice(0,2) + ':' + val.slice(2);
+  if (val.length >= 2 && val.includes(':')) return val;
+  return val;
+}
+
+function fmtMilInput(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v.length > 4) v = v.slice(0,4);
+  if (v.length >= 3) el.value = v.slice(0,2) + ':' + v.slice(2);
+  else el.value = v;
+}
+
+// ─── COMPUTATION ENGINE ──────────────────────────────────────────
+function toMinutes(timeStr) {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function normalizeTime(t) {
+  if (!t) return '';
+  t = String(t).trim();
+  // Handle "8:00 AM" style
+  const ampm = t.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (ampm) {
+    let h = parseInt(ampm[1]);
+    const m = parseInt(ampm[2]);
+    const per = ampm[3].toUpperCase();
+    if (per === 'PM' && h < 12) h += 12;
+    if (per === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  // Already HH:MM
+  if (/^\d{1,2}:\d{2}$/.test(t)) {
+    const [h,m] = t.split(':');
+    return `${String(parseInt(h)).padStart(2,'0')}:${m}`;
+  }
+  return t;
+}
+
+function computeRow(row, shift) {
+  const result = { hours: 0, late: 0, ut: 0, ot: 0 };
+  if (!row.timeIn || !row.timeOut) return result;
+
+  // Build full datetime strings for in and out
+  const dateIn = row.dateIn || row.date || '';
+  const dateOut = row.dateOut || row.date || '';
+
+  let workedMinutes;
+  if (dateIn && dateOut) {
+    // Use actual dates for accurate overnight calculation
+    const dtIn = new Date(`${dateIn}T${row.timeIn}`);
+    let dtOut = new Date(`${dateOut}T${row.timeOut}`);
+    // Auto-advance dateOut by 1 day for overnight shifts where both dates are the same
+    // and timeOut is earlier than timeIn (e.g. timeIn=18:10, timeOut=07:02 same dateOut)
+    if (!isNaN(dtIn) && !isNaN(dtOut) && dtOut <= dtIn) {
+      dtOut = new Date(dtOut.getTime() + 24 * 60 * 60 * 1000);
+    }
+    if (isNaN(dtIn) || isNaN(dtOut) || dtOut <= dtIn) return result;
+    workedMinutes = (dtOut - dtIn) / 60000;
+  } else {
+    // Fallback: time-only, handle overnight by detecting timeOut < timeIn
+    const inMin = toMinutes(row.timeIn);
+    const outMin = toMinutes(row.timeOut);
+    if (inMin === null || outMin === null) return result;
+    workedMinutes = outMin >= inMin ? outMin - inMin : (1440 - inMin) + outMin;
+  }
+
+  if (workedMinutes <= 0) return result;
+
+  // Deduct 1 hour lunch break if worked > 5 hours (300 min)
+  if (workedMinutes > 300) workedMinutes -= 60;
+
+  result.hours = workedMinutes / 60;
+
+  if (shift) {
+    const stdIn = toMinutes(shift.timeIn);
+    const stdOut = toMinutes(shift.timeOut);
+    const stdHours = shift.stdHours;
+
+    // Late: employee arrived after standard time in
+    const inMin = toMinutes(row.timeIn);
+    if (stdIn !== null && inMin > stdIn) {
+      result.late = inMin - stdIn;
+    }
+
+    // Undertime: employee left before standard time out (compare time-of-day)
+    const outMin = toMinutes(row.timeOut);
+    // For overnight shifts stdOut may be early morning (e.g. 06:00)
+    // Only flag undertime if shift is NOT overnight OR if outMin < stdOut same day
+    const isOvernightShift = stdOut !== null && stdIn !== null && stdOut < stdIn;
+    if (stdOut !== null) {
+      if (!isOvernightShift && outMin < stdOut) {
+        result.ut = stdOut - outMin;
+      } else if (isOvernightShift && outMin < stdOut) {
+        result.ut = stdOut - outMin;
+      }
+    }
+
+    // Overtime: worked beyond standard hours; reg hrs capped at stdHours
+    const stdMinutes = stdHours * 60;
+    if (workedMinutes > stdMinutes) {
+      result.ot = workedMinutes - stdMinutes;
+      result.hours = stdHours; // reg hrs = exactly stdHours, not total
+    }
+  }
+  return result;
+}
+
+function recalcTotals() {
+  if (!STATE.selectedEmpId) return;
+  const rows = STATE.logs[STATE.selectedEmpId] || [];
+  // Build leave map for this employee
+  const empLeave = STATE.leave.filter(l => l.empId === STATE.selectedEmpId);
+  const leaveByDate = {};
+  empLeave.forEach(l => { leaveByDate[l.date] = l; });
+
+  let totHours = 0, totLate = 0, totUt = 0, totOt = 0, totAbsHrs = 0;
+  rows.forEach(r => {
+    const shift = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+    const c = computeRow(r, shift);
+    const dateIn = r.dateIn || r.date || '';
+    const leaveEntry = dateIn ? leaveByDate[dateIn] : null;
+
+    if (leaveEntry && !r.timeIn && !r.timeOut) {
+      // On leave — count leave hours as reg hours, no absent
+      totHours += leaveEntry.hours;
+    } else {
+      totHours += c.hours;
+      if (!r.timeIn && !r.timeOut && shift && !leaveEntry) totAbsHrs += shift.stdHours;
+    }
+    totLate += c.late;
+    totUt += c.ut;
+    totOt += c.ot;
+  });
+  document.getElementById('tot-hours').textContent = totHours.toFixed(2);
+  document.getElementById('tot-ot').textContent = (totOt / 60).toFixed(2);
+  document.getElementById('tot-late').textContent = (totLate / 60).toFixed(2);
+  document.getElementById('tot-ut').textContent = (totUt / 60).toFixed(2);
+  document.getElementById('tot-abs').textContent = totAbsHrs.toFixed(2);
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────
+function updateDashboard() {
+  document.getElementById('stat-emp').textContent = STATE.employees.length;
+  document.getElementById('stat-shifts').textContent = STATE.shiftMaster.length;
+  const totalLogs = Object.values(STATE.logs).reduce((s, rows) => s + rows.length, 0);
+  document.getElementById('stat-logs').textContent = totalLogs;
+  if (STATE.coverageFrom && STATE.coverageTo) {
+    const from = new Date(STATE.coverageFrom);
+    const to = new Date(STATE.coverageTo);
+    const days = Math.round((to - from) / 86400000) + 1;
+    document.getElementById('stat-days').textContent = days;
+  }
+}
+
+// ─── REPORTS ─────────────────────────────────────────────────────
+function populateReportFilter() {
+  const sel = document.getElementById('rpt-emp-filter');
+  sel.innerHTML = '<option value="all">All Employees</option>' +
+    sortedEmps().map(e => `<option value="${e.id}">${e.name} — ${e.id}</option>`).join('');
+}
+
+function applyReportCoverageDates() {
+  if (!STATE.coverageFrom || !STATE.coverageTo) { toast('Set coverage dates in Time Log tab first', 'error'); return; }
+  document.getElementById('rpt-date-from').value = STATE.coverageFrom;
+  document.getElementById('rpt-date-to').value = STATE.coverageTo;
+  toast('Coverage dates applied to report filter', 'success');
+}
+
+function buildSummary() {
+  const empFilter = document.getElementById('rpt-emp-filter').value;
+  const sortBy = document.getElementById('rpt-sort').value;
+  const rptFrom = document.getElementById('rpt-date-from').value;
+  const rptTo = document.getElementById('rpt-date-to').value;
+
+  const emps = empFilter === 'all' ? STATE.employees : STATE.employees.filter(e => e.id === empFilter);
+  const rows = [];
+
+  // Compute expected days in the filtered range
+  let expectedDays = 0;
+  const filterFrom = rptFrom || STATE.coverageFrom;
+  const filterTo = rptTo || STATE.coverageTo;
+  if (filterFrom && filterTo) {
+    expectedDays = Math.round((new Date(filterTo) - new Date(filterFrom)) / 86400000) + 1;
+  }
+
+  emps.forEach(emp => {
+    let allLogs = STATE.logs[emp.id] || [];
+    // Apply date range filter to logs
+    const logs = allLogs.filter(r => {
+      const d = r.dateIn || r.date || '';
+      if (!d) return true;
+      if (filterFrom && d < filterFrom) return false;
+      if (filterTo && d > filterTo) return false;
+      return true;
+    });
+
+    // Build leave map for this employee within the date range
+    const empLeave = STATE.leave.filter(l => {
+      if (l.empId !== emp.id) return false;
+      if (filterFrom && l.date < filterFrom) return false;
+      if (filterTo && l.date > filterTo) return false;
+      return true;
+    });
+    const leaveByDate = {};
+    empLeave.forEach(l => { leaveByDate[l.date] = l; });
+
+    let totHours = 0, totLate = 0, totUt = 0, totOt = 0, daysPresent = 0;
+    logs.forEach(r => {
+      const shift = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+      const c = computeRow(r, shift);
+      const dateIn = r.dateIn || r.date || '';
+      const leaveEntry = dateIn ? leaveByDate[dateIn] : null;
+
+      if (leaveEntry && !r.timeIn && !r.timeOut) {
+        // Fully on leave — counts as present, add leave hours
+        daysPresent++;
+        totHours += leaveEntry.hours;
+      } else {
+        if (c.hours > 0) daysPresent++;
+        totHours += c.hours;
+        // If has actual time + leave on same day, add leave hours on top
+        if (leaveEntry && (r.timeIn || r.timeOut)) totHours += leaveEntry.hours;
+      }
+      totLate += c.late;
+      totUt += c.ut;
+      totOt += c.ot;
+    });
+
+    const absences = Math.max(0, expectedDays - daysPresent);
+    const absHrs   = absences * 8;
+    // Convert late/ut/ot to hours for storage
+    rows.push({ emp, totHours, totLate: totLate/60, totUt: totUt/60, totOt: totOt/60, daysPresent, absences, absHrs, filterFrom, filterTo });
+  });
+
+  if (sortBy === 'id') rows.sort((a,b) => a.emp.id.localeCompare(b.emp.id));
+  if (sortBy === 'name') rows.sort((a,b) => a.emp.name.localeCompare(b.emp.name));
+  if (sortBy === 'hours') rows.sort((a,b) => b.totHours - a.totHours);
+  if (sortBy === 'late') rows.sort((a,b) => b.totLate - a.totLate);
+
+  return rows;
+}
+
+function generateReport() {
+  if (!STATE.employees.length) { toast('No employees loaded', 'error'); return; }
+  const rows = buildSummary();
+  const rptFrom = document.getElementById('rpt-date-from').value;
+  const rptTo = document.getElementById('rpt-date-to').value;
+  const fromLabel = rptFrom || STATE.coverageFrom;
+  const toLabel = rptTo || STATE.coverageTo;
+  const period = fromLabel && toLabel ? `${fromLabel} to ${toLabel}` : 'All Dates';
+  const generated = new Date().toLocaleString();
+
+  // Push to history
+  STATE.reportHistory.unshift({ period, generated, rows: JSON.parse(JSON.stringify(rows)) });
+  saveReportHistory();
+  renderReportHistory();
+  toast('Report generated and saved to history!', 'success');
+}
+
+function renderReportHistory() {
+  const container = document.getElementById('rpt-history-container');
+  if (!container) return;
+  if (!STATE.reportHistory.length) {
+    container.innerHTML = `<div class="card" style="text-align:center;padding:40px 20px">
+      <div style="font-size:36px;margin-bottom:12px">📋</div>
+      <div style="font-weight:700;color:var(--navy-header);font-size:15px;margin-bottom:6px">No Reports Generated Yet</div>
+      <div class="text-muted" style="font-size:13px">Set your filters above and click <strong>Generate &amp; Save Report</strong></div>
+    </div>`;
+    return;
+  }
+  container.innerHTML = STATE.reportHistory.map((rpt, hi) => {
+    const totals = rpt.rows.reduce((acc, r) => ({
+      hours:   acc.hours   + (+r.totHours||0),
+      late:    acc.late    + (+r.totLate||0),
+      ut:      acc.ut      + (+r.totUt||0),
+      ot:      acc.ot      + (+r.totOt||0),
+      present: acc.present + (+r.daysPresent||0),
+      abs:     acc.abs     + (+r.absences||0),
+      absHrs:  acc.absHrs  + (+r.absHrs || (+r.absences||0)*8),
+    }), { hours:0, late:0, ut:0, ot:0, present:0, abs:0, absHrs:0 });
+    const fmt = v => (+v).toFixed(2);
+
+    return `
+    <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;border:1px solid #BDD7EE">
+
+      <!-- Report Card Header Band -->
+      <div style="background:var(--navy-header);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="background:var(--accent);border-radius:2px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;letter-spacing:1px;text-transform:uppercase">Report #${STATE.reportHistory.length - hi}</div>
+          <div style="color:#ffffff;font-weight:700;font-size:14px">Period: <span style="color:#BDD7EE">${rpt.period}</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:#9DB8D9;font-family:var(--mono)">Generated: ${rpt.generated}</span>
+          <button class="btn btn-sm" style="background:#2E75B6;color:#fff;border:none;border-radius:2px" onclick="exportReportCSVByIndex(${hi})">⬇ Export XLSX</button>
+          <button class="btn btn-sm" style="background:rgba(192,0,0,0.7);color:#fff;border:none;border-radius:2px" onclick="deleteReport(${hi})">✕ Delete</button>
+        </div>
+      </div>
+
+      <!-- Stats Summary Strip -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#DEEAF1;border-bottom:1px solid #BDD7EE">
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Employees</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent)">${rpt.rows.length}</div>
+        </div>
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Days Present</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#375623">${totals.present}</div>
+        </div>
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Absences</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${totals.abs>0?'var(--danger)':'#375623'}">${totals.abs}</div>
+        </div>
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Absent Hrs</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${totals.absHrs>0?'var(--danger)':'#375623'}">${totals.absHrs.toFixed(0)}</div>
+        </div>
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Total Hours</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--navy-header)">${fmt(totals.hours)}</div>
+        </div>
+        <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Total Late</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:${totals.late>0?'var(--danger)':'#375623'}">${fmt(totals.late)}</div>
+        </div>
+        <div style="padding:10px 14px;text-align:center">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Overtime</div>
+          <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent)">${fmt(totals.ot)}</div>
+        </div>
+      </div>
+
+      <!-- Search bar -->
+      <div style="padding:10px 16px;background:#F8FAFD;border-bottom:1px solid #DEEAF1;display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--navy-header);font-weight:700">🔍 Filter:</span>
+        <input type="text" placeholder="Search by ID or name…" style="width:220px;margin:0;padding:5px 10px;font-size:12px;border:1px solid #BDD7EE;border-radius:2px"
+          oninput="filterReportTable(this.value, '${hi}')">
+        <span id="rpt-row-count-${hi}" style="font-size:11px;color:#888;font-family:var(--mono)">${rpt.rows.length} employees</span>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-wrap" style="border:none;border-radius:0;box-shadow:none">
+        <table id="rpt-table-${hi}">
+          <thead>
+            <tr>
+              <th style="width:36px;text-align:center">#</th>
+              <th>Employee ID</th>
+              <th>Employee Name</th>
+              <th style="text-align:center">Days Present</th>
+              <th style="text-align:center">Absences</th>
+              <th style="text-align:right">Absent Hrs</th>
+              <th style="text-align:right">Total Hours</th>
+              <th style="text-align:right">Late (hrs)</th>
+              <th style="text-align:right">Undertime (hrs)</th>
+              <th style="text-align:right">Overtime (hrs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rpt.rows.length ? rpt.rows.map((r, ri) => `
+              <tr data-search="${(r.emp.id+' '+r.emp.name).toLowerCase()}">
+                <td style="text-align:center;color:#aaa;font-size:11px;font-family:var(--mono)">${ri+1}</td>
+                <td><span style="font-family:var(--mono);font-size:12px;background:#DEEAF1;border:1px solid #BDD7EE;border-radius:2px;padding:2px 7px;display:inline-block">${r.emp.id}</span></td>
+                <td style="font-weight:600;color:var(--navy-header)">${r.emp.name}</td>
+                <td style="text-align:center"><span style="font-family:var(--mono);font-weight:700;color:#375623">${r.daysPresent}</span></td>
+                <td style="text-align:center">${r.absences > 0
+                  ? `<span class="badge badge-red">${r.absences}</span>`
+                  : `<span class="badge badge-green">0</span>`}</td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${(+r.absHrs||(+r.absences||0)*8)>0?'var(--danger)':'#aaa'}">${(+r.absHrs||(+r.absences||0)*8).toFixed(0)}</td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--navy-header)">${fmt(r.totHours)}</td>
+                <td style="text-align:right;font-family:var(--mono);color:${+r.totLate>0?'var(--danger)':'#aaa'}">${fmt(r.totLate)}</td>
+                <td style="text-align:right;font-family:var(--mono);color:${+r.totUt>0?'var(--warn)':'#aaa'}">${fmt(r.totUt)}</td>
+                <td style="text-align:right;font-family:var(--mono);font-weight:${+r.totOt>0?'700':'400'};color:${+r.totOt>0?'var(--accent)':'#aaa'}">${fmt(r.totOt)}</td>
+              </tr>`).join('')
+            : '<tr><td colspan="9" class="empty-state">No data in this report</td></tr>'}
+          </tbody>
+          <!-- Totals footer row -->
+          ${rpt.rows.length ? `
+          <tfoot>
+            <tr style="background:var(--navy-header)">
+              <td colspan="3" style="color:#BDD7EE;font-weight:700;font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:9px 12px;border-right:1px solid rgba(189,215,238,0.2)">TOTALS (${rpt.rows.length} employees)</td>
+              <td style="text-align:center;font-family:var(--mono);font-weight:700;color:#ffffff;border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${totals.present}</td>
+              <td style="text-align:center;font-family:var(--mono);font-weight:700;color:${totals.abs>0?'#F4B183':'#A9D18E'};border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${totals.abs}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${totals.absHrs>0?'#F4B183':'#A9D18E'};border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${totals.absHrs.toFixed(0)}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700;color:#ffffff;border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${fmt(totals.hours)}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${totals.late>0?'#F4B183':'#9DB8D9'};border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${fmt(totals.late)}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700;color:${totals.ut>0?'#FFD966':'#9DB8D9'};border-right:1px solid rgba(189,215,238,0.2);padding:9px 12px">${fmt(totals.ut)}</td>
+              <td style="text-align:right;font-family:var(--mono);font-weight:700;color:#BDD7EE;padding:9px 12px">${fmt(totals.ot)}</td>
+            </tr>
+          </tfoot>` : ''}
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── ACTUAL TIME IN/OUT REPORT ───────────────────────────────────
+function generateActualTimeInOut() {
+  const rptFrom = document.getElementById('rpt-date-from').value;
+  const rptTo   = document.getElementById('rpt-date-to').value;
+  const empFilter = document.getElementById('rpt-emp-filter').value;
+  if (!rptFrom || !rptTo) { toast('Please set Date From and Date To before generating', 'error'); return; }
+
+  const emps = empFilter === 'all' ? STATE.employees : STATE.employees.filter(e => e.id === empFilter);
+  // Gather all logs in range
+  let allRows = [];
+  emps.forEach(emp => {
+    let logs = (STATE.logs[emp.id] || []).filter(r => {
+      const d = r.dateIn || r.date || '';
+      return d >= rptFrom && d <= rptTo;
+    });
+    logs.forEach(r => {
+      allRows.push({ emp, r });
+    });
+  });
+
+  // Sort by employee ID then date
+  allRows.sort((a, b) => {
+    const idCmp = a.emp.id.localeCompare(b.emp.id);
+    if (idCmp !== 0) return idCmp;
+    const da = a.r.dateIn || a.r.date || '';
+    const db = b.r.dateIn || b.r.date || '';
+    return da.localeCompare(db);
+  });
+
+  const container = document.getElementById('actual-timeinout-container');
+  const period = `${rptFrom} to ${rptTo}`;
+  const generated = new Date().toLocaleString();
+
+  if (!allRows.length) {
+    container.innerHTML = `<div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:28px;margin-bottom:8px">🕐</div>
+      <div style="font-weight:700;color:var(--navy-header);margin-bottom:4px">No time log entries found</div>
+      <div class="text-muted" style="font-size:13px">No logs recorded in the selected date range.</div>
+    </div>`;
+    // Scroll to results
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  const rowsHtml = allRows.map((item, ri) => {
+    const { emp, r } = item;
+    const dateIn  = r.dateIn  || r.date || '';
+    const dateOut = r.dateOut || r.date || '';
+    const dayStr  = dateIn ? new Date(dateIn + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase() : '—';
+    const shift   = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+    const c       = computeRow(r, shift);
+    let statusLabel, statusClass;
+    if (!r.timeIn && !r.timeOut)          { statusLabel = 'ABSENT';     statusClass = 'badge-red'; }
+    else if (r.timeIn && r.timeOut)        { statusLabel = 'PRESENT';    statusClass = 'badge-green'; }
+    else                                   { statusLabel = 'INCOMPLETE'; statusClass = 'badge-amber'; }
+
+    return `<tr data-search="${(emp.id+' '+emp.name).toLowerCase()}" style="background:${ri%2===0?'':'#EEF4FA'}">
+      <td style="text-align:center;color:#aaa;font-size:11px;font-family:var(--mono)">${ri+1}</td>
+      <td><span style="font-family:var(--mono);font-size:12px;background:#DEEAF1;border:1px solid #BDD7EE;border-radius:2px;padding:2px 7px;display:inline-block">${emp.id}</span></td>
+      <td style="font-weight:600;color:var(--navy-header);white-space:nowrap">${emp.name}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:center">${dateIn || '—'}</td>
+      <td style="text-align:center;color:#888;font-size:11px;font-family:var(--mono);font-weight:700">${dayStr}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:center;color:${r.timeIn?'var(--navy-header)':'#ccc'};font-weight:700">${r.timeIn || '—'}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:center;color:${r.timeOut?'var(--navy-header)':'#ccc'};font-weight:700">${r.timeOut || '—'}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:center">${r.shiftCode || '—'}</td>
+      <td style="text-align:center"><span class="badge ${statusClass}">${statusLabel}</span></td>
+      <td style="text-align:right;font-family:var(--mono);font-size:12px;font-weight:700;color:${c.hours>0?'#375623':'#ccc'}">${c.hours>0 ? c.hours.toFixed(2) : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+  <div class="card" style="margin-bottom:20px;padding:0;overflow:hidden;border:1px solid #BDD7EE">
+    <!-- Header -->
+    <div style="background:var(--navy-header);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="background:#ED7D31;border-radius:2px;padding:3px 10px;font-size:10px;font-weight:700;color:#fff;letter-spacing:1px;text-transform:uppercase">Actual Time In / Out</div>
+        <div style="color:#ffffff;font-weight:700;font-size:14px">Period: <span style="color:#BDD7EE">${period}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11px;color:#9DB8D9;font-family:var(--mono)">Generated: ${generated}</span>
+        <button class="btn btn-sm" style="background:#2E75B6;color:#fff;border:none;border-radius:2px" onclick="exportActualTimeInOut('${rptFrom}','${rptTo}','${empFilter}')">⬇ Export XLSX</button>
+        <button class="btn btn-sm" style="background:rgba(192,0,0,0.7);color:#fff;border:none;border-radius:2px" onclick="document.getElementById('actual-timeinout-container').innerHTML=''">✕ Close</button>
+      </div>
+    </div>
+    <!-- Summary strip -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);background:#DEEAF1;border-bottom:1px solid #BDD7EE">
+      <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Total Records</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent)">${allRows.length}</div>
+      </div>
+      <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Present</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#375623">${allRows.filter(({r})=>r.timeIn&&r.timeOut).length}</div>
+      </div>
+      <div style="padding:10px 14px;border-right:1px solid #BDD7EE;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Absent</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--danger)">${allRows.filter(({r})=>!r.timeIn&&!r.timeOut).length}</div>
+      </div>
+      <div style="padding:10px 14px;text-align:center">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--navy-header);font-weight:700;margin-bottom:2px">Incomplete</div>
+        <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--warn)">${allRows.filter(({r})=>(r.timeIn||r.timeOut)&&!(r.timeIn&&r.timeOut)).length}</div>
+      </div>
+    </div>
+    <!-- Search bar -->
+    <div style="padding:10px 16px;background:#F8FAFD;border-bottom:1px solid #DEEAF1;display:flex;align-items:center;gap:10px">
+      <span style="font-size:12px;color:var(--navy-header);font-weight:700">🔍 Filter:</span>
+      <input type="text" placeholder="Search by ID or name…" style="width:220px;margin:0;padding:5px 10px;font-size:12px;border:1px solid #BDD7EE;border-radius:2px"
+        oninput="filterActualTimeTable(this.value)">
+      <span id="actual-row-count" style="font-size:11px;color:#888;font-family:var(--mono)">${allRows.length} records</span>
+    </div>
+    <!-- Table -->
+    <div class="table-wrap" style="border:none;border-radius:0;box-shadow:none">
+      <table id="actual-timeinout-table">
+        <thead>
+          <tr>
+            <th style="width:36px;text-align:center">#</th>
+            <th>Employee ID</th>
+            <th>Employee Name</th>
+            <th style="text-align:center">Date</th>
+            <th style="text-align:center">Day</th>
+            <th style="text-align:center">Actual Time In</th>
+            <th style="text-align:center">Actual Time Out</th>
+            <th style="text-align:center">Shift</th>
+            <th style="text-align:center">Status</th>
+            <th style="text-align:right">Hours Worked</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  toast(`Actual Time In/Out report generated — ${allRows.length} records`, 'success');
+}
+
+function filterActualTimeTable(query) {
+  const table = document.getElementById('actual-timeinout-table');
+  const counter = document.getElementById('actual-row-count');
+  if (!table) return;
+  const q = query.toLowerCase().trim();
+  const rows = table.querySelectorAll('tbody tr[data-search]');
+  let visible = 0;
+  rows.forEach(tr => {
+    const match = !q || tr.dataset.search.includes(q);
+    tr.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  if (counter) counter.textContent = `${visible} record${visible!==1?'s':''}`;
+}
+
+function exportActualTimeInOut(rptFrom, rptTo, empFilter) {
+  const emps = empFilter === 'all' ? STATE.employees : STATE.employees.filter(e => e.id === empFilter);
+  const wb = XLSX.utils.book_new();
+  const wsData = [
+    [`PPC RANKS — Actual Time In/Out Report`],
+    [`Period: ${rptFrom} to ${rptTo}`],
+    [`Generated: ${new Date().toLocaleString('en-PH')}`],
+    [],
+    ['Employee ID','Employee Name','Date','Day','Actual Time In','Actual Time Out','Shift Code','Status','Hours Worked']
+  ];
+  emps.forEach(emp => {
+    let logs = (STATE.logs[emp.id] || []).filter(r => {
+      const d = r.dateIn || r.date || '';
+      return d >= rptFrom && d <= rptTo;
+    });
+    logs.sort((a,b)=>(a.dateIn||a.date||'').localeCompare(b.dateIn||b.date||''));
+    logs.forEach(r => {
+      const dateIn = r.dateIn || r.date || '';
+      const dayStr = dateIn ? new Date(dateIn + 'T00:00:00').toLocaleDateString('en-US',{weekday:'short'}).toUpperCase() : '';
+      const shift  = r.shiftCode ? STATE.shiftMaster.find(s=>s.code===r.shiftCode) : null;
+      const c      = computeRow(r, shift);
+      const status = (!r.timeIn&&!r.timeOut)?'ABSENT':(r.timeIn&&r.timeOut?'PRESENT':'INCOMPLETE');
+      wsData.push([emp.id, emp.name, dateIn, dayStr, r.timeIn||'', r.timeOut||'', r.shiftCode||'', status, c.hours>0?+c.hours.toFixed(2):0]);
+    });
+  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:14},{wch:36},{wch:13},{wch:6},{wch:14},{wch:15},{wch:12},{wch:12},{wch:13}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Actual Time In-Out');
+  const fromStr = rptFrom.replace(/-/g,'');
+  const toStr   = rptTo.replace(/-/g,'');
+  XLSX.writeFile(wb, `PPC_Actual_TimeInOut_${fromStr}_to_${toStr}.xlsx`);
+  toast('Actual Time In/Out exported!', 'success');
+}
+
+function filterReportTable(query, hi) {
+  const table = document.getElementById(`rpt-table-${hi}`);
+  const counter = document.getElementById(`rpt-row-count-${hi}`);
+  if (!table) return;
+  const q = query.toLowerCase().trim();
+  const rows = table.querySelectorAll('tbody tr[data-search]');
+  let visible = 0;
+  rows.forEach(tr => {
+    const match = !q || tr.dataset.search.includes(q);
+    tr.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  if (counter) counter.textContent = `${visible} employee${visible!==1?'s':''}`;
+}
+
+function deleteReport(idx) {
+  if (!confirm('Remove this report from history?')) return;
+  STATE.reportHistory.splice(idx, 1);
+  saveReportHistory();
+  renderReportHistory();
+  toast('Report removed', 'success');
+}
+
+function saveReportHistory() {
+  cloudPush();
+  try { localStorage.setItem('ppc_reportHistory', JSON.stringify(STATE.reportHistory)); } catch(e) {}
+}
+
+function exportReportByIndex(idx) {
+  const rpt = STATE.reportHistory[idx];
+  if (!rpt) { toast('Report not found', 'error'); return; }
+  const summaryRows = rpt.rows;
+  const [rptFrom, rptTo] = rpt.period.includes(' to ') ? rpt.period.split(' to ') : [rpt.period, ''];
+  _doExport(summaryRows, rptFrom, rptTo);
+}
+
+function exportReport() {
+  if (!STATE.employees.length) { toast('No employees loaded', 'error'); return; }
+  const summaryRows = buildSummary();
+  const rptFrom = document.getElementById('rpt-date-from').value || STATE.coverageFrom || '';
+  const rptTo = document.getElementById('rpt-date-to').value || STATE.coverageTo || '';
+  _doExport(summaryRows, rptFrom, rptTo);
+}
+
+function _doExport(summaryRows, rptFrom, rptTo) {
+  const now  = new Date();
+  const ts   = now.toLocaleString('en-PH');
+  const today= now.toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+  const fmt2 = v => parseFloat(v||0).toFixed(2);
+
+  const totals = summaryRows.reduce((acc,r)=>({
+    hours:   acc.hours   + r.totHours,
+    late:    acc.late    + r.totLate,
+    ut:      acc.ut      + r.totUt,
+    ot:      acc.ot      + r.totOt,
+    present: acc.present + r.daysPresent,
+    abs:     acc.abs     + r.absences,
+    absHrs:  acc.absHrs  + (r.absHrs || r.absences * 8),
+  }),{hours:0,late:0,ut:0,ot:0,present:0,abs:0,absHrs:0});
+
+  // Summary rows
+  const summaryRows_html = summaryRows.map((r,i) => `
+    <tr style="background:${i%2===0?'#FFFFFF':'#DEEAF1'}">
+      <td style="text-align:center;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri">${r.emp.id||''}</td>
+      <td style="font-weight:600;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri">${r.emp.name||''}</td>
+      <td style="text-align:center;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri">${r.daysPresent}</td>
+      <td style="text-align:center;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri;color:${r.absences>0?'#C00000':'#375623'};font-weight:${r.absences>0?'700':'400'}">${r.absences}</td>
+      <td style="text-align:center;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri;color:${(r.absHrs||r.absences*8)>0?'#C00000':'#375623'};font-weight:${(r.absHrs||r.absences*8)>0?'700':'400'}">${r.absHrs||r.absences*8}</td>
+      <td style="text-align:right;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri">${fmt2(r.totHours)}</td>
+      <td style="text-align:right;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri;color:${r.totLate>0?'#C00000':'inherit'}">${fmt2(r.totLate)}</td>
+      <td style="text-align:right;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri;color:${r.totUt>0?'#ED7D31':'inherit'}">${fmt2(r.totUt)}</td>
+      <td style="text-align:right;border:1px solid #BDD7EE;padding:5px 8px;font-size:9pt;font-family:Calibri;color:${r.totOt>0?'#2E75B6':'inherit'};font-weight:${r.totOt>0?'700':'400'}">${fmt2(r.totOt)}</td>
+    </tr>`).join('');
+
+  // Daily log rows
+  let dailyRows_html = '';
+  let dailyRowCount  = 0;
+  STATE.employees.forEach(emp => {
+    let logs = STATE.logs[emp.id] || [];
+    if(rptFrom) logs = logs.filter(r=>(r.dateIn||r.date||'')>=rptFrom);
+    if(rptTo)   logs = logs.filter(r=>(r.dateIn||r.date||'')<=rptTo);
+    logs.forEach(r => {
+      const shift  = r.shiftCode ? STATE.shiftMaster.find(s=>s.code===r.shiftCode) : null;
+      const c      = computeRow(r, shift);
+      const dateIn = r.dateIn||r.date||'';
+      const dateOut= r.dateOut||r.date||'';
+      const dayName= dateIn ? new Date(dateIn).toLocaleDateString('en-US',{weekday:'short'}) : '';
+      const status = (!r.timeIn&&!r.timeOut)?'Absent':(c.hours>0?'Present':'Incomplete');
+      const sColor = status==='Present'?'#1b8a50':status==='Absent'?'#c0392b':'#d97706';
+      const bg     = dailyRowCount%2===0?'#FFFFFF':'#E8F0F9';
+      dailyRows_html += `
+      <tr style="background:${bg}">
+        <td style="border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt;color:#555">${emp.id||''}</td>
+        <td style="font-weight:600;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${emp.name||''}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${dateIn}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${r.timeIn||''}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${dateOut}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${r.timeOut||''}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt;color:#64748b">${dayName}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${r.shiftCode||''}</td>
+        <td style="text-align:right;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt;font-weight:600">${fmt2(c.hours)}</td>
+        <td style="text-align:right;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${fmt2(c.late/60)}</td>
+        <td style="text-align:right;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt">${fmt2(c.ut/60)}</td>
+        <td style="text-align:right;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt;font-weight:700;color:#1565c0">${fmt2(c.ot/60)}</td>
+        <td style="text-align:center;border:1px solid #BDD0E8;padding:4px 6px;font-size:8.5pt;font-weight:700;color:${sColor}">${status}</td>
+      </tr>`;
+      dailyRowCount++;
+    });
+  });
+
+  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:x="urn:schemas-microsoft-com:office:excel"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8"/>
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+<x:Name>Timekeeping Report</x:Name>
+<x:WorksheetOptions>
+  <x:PageSetup><x:Layout x:Orientation="Landscape"/></x:PageSetup>
+  <x:FreezePanes/><x:FrozenNoSplit/>
+  <x:SplitHorizontal>4</x:SplitHorizontal>
+  <x:TopRowBottomPane>4</x:TopRowBottomPane>
+  <x:ActivePane>2</x:ActivePane>
+</x:WorksheetOptions>
+</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>
+  body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#1a1a1a}
+  table{border-collapse:collapse;width:100%}
+  .r-title td{background:#1F3864;color:#FFFFFF;font-size:14pt;font-weight:bold;padding:10px 12px;border:1px solid #1F3864;font-family:Calibri}
+  .r-meta  td{background:#1F3864;color:#BDD7EE;font-size:9pt;padding:4px 12px;border:1px solid #1F3864;font-family:Calibri}
+  .r-gen   td{background:#1F3864;color:#9DB8D9;font-size:8.5pt;font-style:italic;padding:4px 12px 8px;border:1px solid #1F3864;border-bottom:3px solid #2E75B6;font-family:Calibri}
+  .r-hdr td{background:#1F3864;color:#FFFFFF;font-size:9pt;font-weight:bold;font-family:Calibri;
+    text-align:center;padding:8px 6px;
+    border-top:2px solid #2E75B6;border-bottom:2px solid #2E75B6;
+    border-left:1px solid #2A4A7A;border-right:1px solid #2A4A7A;
+    white-space:normal;word-wrap:break-word}
+  .r-tot td{background:#1F3864;color:#FFFFFF;font-size:9.5pt;font-weight:bold;font-family:Calibri;
+    padding:7px 8px;
+    border-top:2px solid #2E75B6;border-bottom:2px solid #2E75B6;
+    border-left:1px solid #2A4A7A;border-right:1px solid #2A4A7A}
+  .r-sect td{background:#1A3A6B;color:#BDD7EE;font-size:10pt;font-weight:bold;font-family:Calibri;
+    text-align:center;padding:6px 8px;border-bottom:2px solid #2E75B6;letter-spacing:1px}
+  .r-foot td{background:#DEEAF1;color:#6B7280;font-size:8pt;font-style:italic;font-family:Calibri;
+    text-align:center;padding:6px;border-top:2px solid #1F3864}
+  td{vertical-align:middle}
+</style>
+</head><body>
+<table>
+  <tr class="r-title"><td colspan="9">PPC RANKS — MANUAL TIMEKEEPING REPORT</td></tr>
+  <tr class="r-meta"><td colspan="9">Report Period: ${rptFrom||'N/A'} to ${rptTo||'N/A'}</td></tr>
+  <tr class="r-gen" ><td colspan="9">Generated: ${ts}</td></tr>
+  <tr class="r-hdr">
+    <td width="105">Employee ID</td>
+    <td width="220">Employee Name</td>
+    <td width="85">Days Present</td>
+    <td width="75">Absences</td>
+    <td width="90">Absent Hrs</td>
+    <td width="115">Total Hours Worked</td>
+    <td width="100">Total Late (hrs)</td>
+    <td width="120">Total Undertime (hrs)</td>
+    <td width="115">Total Overtime (hrs)</td>
+  </tr>
+  ${summaryRows_html}
+  <tr class="r-tot">
+    <td style="border:1px solid #2A4A7A"></td>
+    <td style="text-align:right;border:1px solid #2A4A7A;padding:7px 8px">TOTALS</td>
+    <td style="text-align:center;border:1px solid #2A4A7A;padding:7px 8px">${totals.present}</td>
+    <td style="text-align:center;border:1px solid #2A4A7A;padding:7px 8px">${totals.abs}</td>
+    <td style="text-align:center;border:1px solid #2A4A7A;padding:7px 8px">${totals.absHrs}</td>
+    <td style="text-align:right;border:1px solid #2A4A7A;padding:7px 8px">${fmt2(totals.hours)}</td>
+    <td style="text-align:right;border:1px solid #2A4A7A;padding:7px 8px">${fmt2(totals.late)}</td>
+    <td style="text-align:right;border:1px solid #2A4A7A;padding:7px 8px">${fmt2(totals.ut)}</td>
+    <td style="text-align:right;border:1px solid #2A4A7A;padding:7px 8px">${fmt2(totals.ot)}</td>
+  </tr>
+  <tr><td colspan="13" style="height:14px;background:#fff;border:none"></td></tr>
+  <tr class="r-sect"><td colspan="13">DAILY TIME LOG DETAIL</td></tr>
+  <tr class="r-hdr" style="font-size:8.5pt">
+    <td>Emp ID</td><td>Employee Name</td>
+    <td>Date In</td><td>Time In</td><td>Date Out</td><td>Time Out</td>
+    <td>Day</td><td>Shift</td>
+    <td>Hours Worked</td><td>Late (hrs)</td>
+    <td>Undertime (hrs)</td><td>Overtime (hrs)</td><td>Status</td>
+  </tr>
+  ${dailyRows_html}
+  <tr><td colspan="13" style="height:10px;background:#fff;border:none"></td></tr>
+  <tr class="r-foot">
+    <td colspan="13">CONFIDENTIAL — For Internal Use Only &nbsp;|&nbsp; PPC Ranks Manual Timekeeping System &nbsp;|&nbsp; ${ts}</td>
+  </tr>
+</table>
+</body></html>`;
+
+  const blob = new Blob(['\uFEFF'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `PPC_RANKS_Timekeeping_${rptFrom||''}${rptFrom?'_to_':''}${rptTo||now.toISOString().slice(0,10)}.xls`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Excel report downloaded!', 'success');
+}
+
+// ─── XLSX EXPORT (styled, matches app theme) ─────────────────────
+function exportCurrentCSV() {
+  if (!STATE.employees.length) { toast('No employees loaded', 'error'); return; }
+  const summaryRows = buildSummary();
+  const rptFrom = document.getElementById('rpt-date-from').value || STATE.coverageFrom || '';
+  const rptTo   = document.getElementById('rpt-date-to').value   || STATE.coverageTo   || '';
+  _doStyledXLSX(summaryRows, rptFrom, rptTo);
+}
+
+function exportReportCSVByIndex(idx) {
+  const rpt = STATE.reportHistory[idx];
+  if (!rpt) { toast('Report not found', 'error'); return; }
+  const [rptFrom, rptTo] = rpt.period.includes(' to ') ? rpt.period.split(' to ') : [rpt.period, ''];
+  _doStyledXLSX(rpt.rows, rptFrom, rptTo);
+}
+
+function _doStyledXLSX(summaryRows, rptFrom, rptTo) {
+  if (typeof XLSX === 'undefined') { toast('XLSX library not loaded', 'error'); return; }
+
+  const now     = new Date();
+  const ts      = now.toLocaleString('en-PH');
+  const period  = (rptFrom && rptTo) ? `${rptFrom} to ${rptTo}` : 'All Dates';
+  const fmt2    = v => +parseFloat(v||0).toFixed(2);
+
+  const totals  = summaryRows.reduce((acc, r) => ({
+    hours:   acc.hours   + r.totHours,
+    late:    acc.late    + r.totLate,
+    ut:      acc.ut      + r.totUt,
+    ot:      acc.ot      + r.totOt,
+    present: acc.present + r.daysPresent,
+    abs:     acc.abs     + r.absences,
+    absHrs:  acc.absHrs  + (r.absHrs || r.absences * 8),
+  }), { hours:0, late:0, ut:0, ot:0, present:0, abs:0, absHrs:0 });
+
+  /* ── Build worksheet data array ── */
+  const wsData = [];
+  const NCOLS  = 9; // summary section column count
+  const EMPTY9 = Array(NCOLS).fill('');
+
+  // Title block (rows 1-3, merged across 9 cols)
+  wsData.push(['PPC RANKS — MANUAL TIMEKEEPING REPORT', ...Array(NCOLS-1).fill('')]);
+  wsData.push([`Report Period: ${period}`,               ...Array(NCOLS-1).fill('')]);
+  wsData.push([`Generated: ${ts}`,                      ...Array(NCOLS-1).fill('')]);
+  wsData.push([]); // blank spacer
+
+  // Column headers (row 5)
+  wsData.push([
+    'Employee ID', 'Employee Name',
+    'Days Present', 'Absences', 'Absent Hrs',
+    'Total Hours Worked', 'Total Late (hrs)',
+    'Total Undertime (hrs)', 'Total Overtime (hrs)'
+  ]);
+
+  // Data rows
+  summaryRows.forEach(r => {
+    wsData.push([
+      r.emp.id, r.emp.name,
+      r.daysPresent, r.absences, (r.absHrs || r.absences * 8),
+      fmt2(r.totHours), fmt2(r.totLate),
+      fmt2(r.totUt),    fmt2(r.totOt)
+    ]);
+  });
+
+  // Totals row
+  wsData.push([
+    '', 'TOTALS',
+    totals.present, totals.abs, totals.absHrs,
+    fmt2(totals.hours), fmt2(totals.late),
+    fmt2(totals.ut),    fmt2(totals.ot)
+  ]);
+
+  wsData.push([]); // spacer
+
+  // ── Daily detail section ──
+  wsData.push(['DAILY TIME LOG DETAIL', '', '', '', '', '', '', '', '', '', '', '', '']);
+  wsData.push([
+    'Emp ID', 'Employee Name',
+    'Date In', 'Time In', 'Date Out', 'Time Out',
+    'Day', 'Shift',
+    'Hours Worked', 'Late (hrs)', 'Undertime (hrs)', 'Overtime (hrs)', 'Status'
+  ]);
+
+  let dailyCount = 0;
+  STATE.employees.forEach(emp => {
+    let logs = STATE.logs[emp.id] || [];
+    if (rptFrom) logs = logs.filter(r => (r.dateIn||r.date||'') >= rptFrom);
+    if (rptTo)   logs = logs.filter(r => (r.dateIn||r.date||'') <= rptTo);
+    logs.forEach(r => {
+      const shift   = r.shiftCode ? STATE.shiftMaster.find(s => s.code === r.shiftCode) : null;
+      const c       = computeRow(r, shift);
+      const dateIn  = r.dateIn || r.date || '';
+      const dateOut = r.dateOut || r.date || '';
+      const dayName = dateIn ? new Date(dateIn).toLocaleDateString('en-US', { weekday:'short' }) : '';
+      const status  = (!r.timeIn && !r.timeOut) ? 'Absent' : (c.hours > 0 ? 'Present' : 'Incomplete');
+      wsData.push([
+        emp.id, emp.name,
+        dateIn, r.timeIn||'', dateOut, r.timeOut||'',
+        dayName, r.shiftCode||'',
+        fmt2(c.hours), fmt2(c.late/60), fmt2(c.ut/60), fmt2(c.ot/60),
+        status
+      ]);
+      dailyCount++;
+    });
+  });
+
+  wsData.push([]); // spacer
+  wsData.push([`CONFIDENTIAL — For Internal Use Only | PPC Ranks Manual Timekeeping System | ${ts}`]);
+
+  /* ── Create workbook ── */
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  /* ── Column widths ── */
+  ws['!cols'] = [
+    { wch: 14 }, // A Emp ID
+    { wch: 28 }, // B Name
+    { wch: 13 }, // C Days Present
+    { wch: 10 }, // D Absences
+    { wch: 11 }, // E Absent Hrs
+    { wch: 17 }, // F Hours Worked
+    { wch: 14 }, // G Late
+    { wch: 17 }, // H Undertime
+    { wch: 15 }, // I Overtime
+    { wch: 12 }, // J (daily)
+    { wch: 10 }, // K
+    { wch: 14 }, // L
+    { wch: 14 }, // M
+    { wch: 11 }, // N Status
+  ];
+
+  /* ── Merges: title rows span all 9 cols ── */
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:8} },  // Title
+    { s:{r:1,c:0}, e:{r:1,c:8} },  // Period
+    { s:{r:2,c:0}, e:{r:2,c:8} },  // Generated
+  ];
+
+  /* ── Cell styles via SheetJS CE (basic) ── */
+  // SheetJS Community Edition supports s: style on cells in xlsx output
+  const NAVY    = '1F3864';
+  const ACCENT  = '2E75B6';
+  const WHITE   = 'FFFFFF';
+  const ALT_ROW = 'DEEAF1';
+  const TOTROW  = '1A3258';
+  const GOLD    = 'F4B942';
+
+  function cellStyle(opts) {
+    return {
+      font:      { name:'Calibri', sz: opts.sz||10, bold:!!opts.bold, color:{ rgb: opts.fgColor||'1a1a1a' } },
+      fill:      opts.bgColor ? { patternType:'solid', fgColor:{ rgb: opts.bgColor } } : undefined,
+      alignment: { horizontal: opts.align||'left', vertical:'center', wrapText:!!opts.wrap },
+      border: {
+        top:    { style:'thin', color:{ rgb:'BDD7EE' } },
+        bottom: { style:'thin', color:{ rgb:'BDD7EE' } },
+        left:   { style:'thin', color:{ rgb:'BDD7EE' } },
+        right:  { style:'thin', color:{ rgb:'BDD7EE' } },
+      }
+    };
+  }
+
+  // Style title rows 0-2
+  ['A1','A2','A3'].forEach((addr, i) => {
+    if (!ws[addr]) return;
+    ws[addr].s = cellStyle({
+      bgColor: NAVY, fgColor: i === 2 ? 'BDD7EE' : WHITE,
+      sz: i === 0 ? 14 : 9, bold: i < 2, align:'left', wrap:false
+    });
+    if (i === 2) ws[addr].s.border.bottom = { style:'medium', color:{ rgb: ACCENT } };
+  });
+
+  // Style column headers (row 5 = index 4 in wsData → xlsx row 5)
+  const HDR_ROW = 5;
+  const COLS8   = ['A','B','C','D','E','F','G','H'];
+  COLS8.forEach(col => {
+    const addr = `${col}${HDR_ROW}`;
+    if (!ws[addr]) return;
+    ws[addr].s = cellStyle({
+      bgColor: NAVY, fgColor: WHITE, sz: 10, bold: true, align: ['C','D','E','F','G','H'].includes(col) ? 'center' : 'left'
+    });
+    ws[addr].s.border.top    = { style:'medium', color:{ rgb: ACCENT } };
+    ws[addr].s.border.bottom = { style:'medium', color:{ rgb: ACCENT } };
+  });
+
+  // Style data rows (starting at row 6 in xlsx)
+  const DATA_START = 6;
+  summaryRows.forEach((r, i) => {
+    const xlRow = DATA_START + i;
+    const bg    = i % 2 === 0 ? 'FFFFFF' : ALT_ROW;
+    COLS8.forEach((col, ci) => {
+      const addr = `${col}${xlRow}`;
+      if (!ws[addr]) return;
+      const align = ci >= 2 ? 'center' : 'left';
+      ws[addr].s = cellStyle({ bgColor: bg, align, sz:10 });
+    });
+  });
+
+  // Style totals row
+  const TOT_ROW = DATA_START + summaryRows.length;
+  COLS8.forEach((col, ci) => {
+    const addr = `${col}${TOT_ROW}`;
+    if (!ws[addr]) return;
+    ws[addr].s = cellStyle({ bgColor: TOTROW, fgColor: WHITE, sz:10, bold:true, align: ci >= 2 ? 'center':'right' });
+    ws[addr].s.border.top    = { style:'medium', color:{ rgb: GOLD } };
+    ws[addr].s.border.bottom = { style:'medium', color:{ rgb: GOLD } };
+  });
+
+  // Section header for Daily Detail
+  const SECT_ROW = TOT_ROW + 3;
+  if (ws[`A${SECT_ROW}`]) {
+    ws[`A${SECT_ROW}`].s = cellStyle({ bgColor:'1A3A6B', fgColor: GOLD, sz:11, bold:true, align:'center', wrap:false });
+    ws['!merges'].push({ s:{r:SECT_ROW-1,c:0}, e:{r:SECT_ROW-1,c:12} });
+  }
+
+  // Style daily header row
+  const DAILY_HDR = SECT_ROW + 1;
+  const COLS13 = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+  COLS13.forEach(col => {
+    const addr = `${col}${DAILY_HDR}`;
+    if (!ws[addr]) return;
+    ws[addr].s = cellStyle({ bgColor: NAVY, fgColor: WHITE, sz:9, bold:true, align:'center' });
+    ws[addr].s.border.top    = { style:'medium', color:{ rgb: ACCENT } };
+    ws[addr].s.border.bottom = { style:'medium', color:{ rgb: ACCENT } };
+  });
+
+  // Style daily data rows
+  const DAILY_DATA_START = DAILY_HDR + 1;
+  for (let i = 0; i < dailyCount; i++) {
+    const xlRow = DAILY_DATA_START + i;
+    const bg    = i % 2 === 0 ? 'FFFFFF' : ALT_ROW;
+    COLS13.forEach(col => {
+      const addr = `${col}${xlRow}`;
+      if (!ws[addr]) return;
+      ws[addr].s = cellStyle({ bgColor: bg, align:'center', sz:9 });
+    });
+  }
+
+  /* ── Row heights ── */
+  ws['!rows'] = [];
+  ws['!rows'][0] = { hpt: 28 }; // title
+  ws['!rows'][1] = { hpt: 16 };
+  ws['!rows'][2] = { hpt: 14 };
+  ws['!rows'][HDR_ROW - 1] = { hpt: 22 };
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Timekeeping Report');
+
+  const fromStr = (rptFrom||'').replace(/-/g,'');
+  const toStr   = (rptTo||'').replace(/-/g,'');
+  XLSX.writeFile(wb, `PPC_RANKS_Report_${fromStr}${fromStr?'_to_':''}${toStr||now.toISOString().slice(0,10)}.xlsx`);
+  toast('Styled Excel report downloaded!', 'success');
+}
+
+// ─── TIMELOG PERSISTENCE ─────────────────────────────────────────
+function saveLogsToStorage() {
+  fbSave(); flashSaved();
+}
+
+// ─── LEAVE ───────────────────────────────────────────────────────
+function populateLeaveEmpDropdowns() {
+  const opts = '<option value="">— Select Employee —</option>' +
+    sortedEmps().map(e => `<option value="${e.id}">${e.name} — ${e.id}</option>`).join('');
+  const sel = document.getElementById('leave-emp-select');
+  if (sel) sel.innerHTML = opts;
+  const fsel = document.getElementById('leave-filter-emp');
+  if (fsel) fsel.innerHTML = '<option value="all">All Employees</option>' +
+    sortedEmps().map(e => `<option value="${e.id}">${e.name} — ${e.id}</option>`).join('');
+}
+
+function addLeaveEntry() {
+  const empId = document.getElementById('leave-emp-select').value;
+  const dateFrom = document.getElementById('leave-date-from').value;
+  const dateTo = document.getElementById('leave-date-to').value || dateFrom;
+  const type = document.getElementById('leave-type').value;
+  const hours = parseFloat(document.getElementById('leave-hours').value);
+  const remarks = document.getElementById('leave-remarks').value.trim();
+  if (!empId) { toast('Select an employee', 'error'); return; }
+  if (!dateFrom) { toast('Select a start date', 'error'); return; }
+  if (!hours || hours <= 0) { toast('Enter valid hours per day', 'error'); return; }
+  const from = new Date(dateFrom);
+  const to = new Date(dateTo);
+  if (to < from) { toast('Date To must be on or after Date From', 'error'); return; }
+  // Generate one entry per day in range
+  const d = new Date(from);
+  let count = 0;
+  const batchId = Date.now();
+  while (d <= to) {
+    const dateStr = d.toISOString().slice(0,10);
+    STATE.leave.push({ empId, date: dateStr, dateFrom, dateTo, type, hours, remarks, id: batchId + count });
+    count++;
+    d.setDate(d.getDate()+1);
+  }
+  saveLeaveRecords();
+  renderLeaveTable();
+  // Refresh time log if the affected employee is currently selected
+  if (STATE.selectedEmpId === empId) renderLogRows();
+  document.getElementById('leave-date-from').value = '';
+  document.getElementById('leave-date-to').value = '';
+  document.getElementById('leave-hours').value = '';
+  document.getElementById('leave-remarks').value = '';
+  document.getElementById('leave-preview-label').textContent = '';
+  toast(`${count} day(s) of leave added for ${empId}`, 'success');
+}
+
+function deleteLeaveEntry(id) {
+  STATE.leave = STATE.leave.filter(l => l.id !== id);
+  saveLeaveRecords();
+  renderLeaveTable();
+  toast('Leave entry removed', 'success');
+}
+
+function deleteLeaveGroup(ids) {
+  if (!confirm('Remove this leave record?')) return;
+  const idSet = new Set(ids);
+  STATE.leave = STATE.leave.filter(l => !idSet.has(l.id));
+  saveLeaveRecords();
+  renderLeaveTable();
+  if (STATE.selectedEmpId) renderLogRows();
+  toast('Leave record removed', 'success');
+}
+
+function saveLeaveRecords() {
+  cloudPush();
+  try { localStorage.setItem('ppc_leave', JSON.stringify(STATE.leave)); flashSaved(); } catch(e) {}
+}
+
+let _flashTimer;
+function flashSaved() {
+  const el = document.getElementById('autosave-indicator');
+  if (!el) return;
+  el.style.opacity = '1';
+  clearTimeout(_flashTimer);
+  _flashTimer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+}
+
+function renderLeaveTable() {
+  const filter = document.getElementById('leave-filter-emp')?.value || 'all';
+  const tbody = document.getElementById('leave-tbody');
+  if (!tbody) return;
+  let entries = filter === 'all' ? STATE.leave : STATE.leave.filter(l => l.empId === filter);
+  entries = [...entries].sort((a,b) => a.date.localeCompare(b.date));
+  if (!entries.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state">No leave records found</td></tr>`;
+    return;
+  }
+  const leaveTypeLabel = { VL:'Vacation Leave', SL:'Sick Leave', EL:'Emergency Leave', ML:'Maternity Leave', PL:'Paternity Leave', OL:'Other Leave' };
+  const leaveTypeBadge = { VL:'badge-blue', SL:'badge-amber', EL:'badge-red', ML:'badge-green', PL:'badge-green', OL:'badge-gray' };
+  // Group consecutive entries from same batch into single display rows
+  // Group by empId + dateFrom + dateTo + type
+  const grouped = [];
+  const seen = new Set();
+  entries.forEach(l => {
+    const key = l.empId + '|' + (l.dateFrom||l.date) + '|' + (l.dateTo||l.date) + '|' + l.type + '|' + l.hours;
+    if (!seen.has(key)) {
+      seen.add(key);
+      const matching = entries.filter(x => x.empId===l.empId && (x.dateFrom||x.date)===(l.dateFrom||l.date) && (x.dateTo||x.date)===(l.dateTo||l.date) && x.type===l.type && x.hours===l.hours);
+      grouped.push({ ...l, totalHrs: matching.reduce((s,x)=>s+x.hours,0), ids: matching.map(x=>x.id) });
+    }
+  });
+  tbody.innerHTML = grouped.map(l => {
+    const emp = STATE.employees.find(e => e.id === l.empId);
+    const df = l.dateFrom || l.date;
+    const dt = l.dateTo || l.date;
+    return `<tr>
+      <td><span class="mono">${l.empId}</span> <span class="text-muted" style="font-size:11px">${emp ? emp.name : ''}</span></td>
+      <td class="mono">${df}</td>
+      <td class="mono">${dt}</td>
+      <td><span class="badge ${leaveTypeBadge[l.type]||'badge-gray'}">${leaveTypeLabel[l.type]||l.type}</span></td>
+      <td class="mono" style="color:var(--info)">${l.hours}h</td>
+      <td class="mono" style="color:var(--accent)">${l.totalHrs}h</td>
+      <td class="text-muted" style="font-size:12px">${l.remarks||'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteLeaveGroup(${JSON.stringify(l.ids)})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+renderEmpTable();
+</script>
+
+
+<span id="PING_IFRAME_FORM_DETECTION" style="display: none;"></span></body></html>
