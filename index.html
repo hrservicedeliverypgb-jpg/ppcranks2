@@ -757,11 +757,11 @@
         <div class="grid3" style="gap:12px;align-items:end">
           <div class="form-group">
             <label class="form-label">Coverage From</label>
-            <input type="date" id="cov-from" onchange="updateCoverage()">
+            <input type="date" id="cov-from" onchange="updateCoverage(true)">
           </div>
           <div class="form-group">
             <label class="form-label">Coverage To</label>
-            <input type="date" id="cov-to" onchange="updateCoverage()">
+            <input type="date" id="cov-to" onchange="updateCoverage(true)">
           </div>
           <div class="form-group">
             <label class="form-label">Search by Last Name</label>
@@ -1341,8 +1341,17 @@ async function checkFbAvailable(){
   return _fbAvailable;
 }
 
+// Dirty flag: set when local edits haven't reached the cloud yet.
+// While dirty, cloudPull must NOT overwrite local data (it would revert edits).
+let _localDirty = parseInt(localStorage.getItem('ppc_dirty') || '0');
+function markDirty(){ _localDirty = Date.now(); try { localStorage.setItem('ppc_dirty', String(_localDirty)); } catch(e){} }
+function clearDirty(){ _localDirty = 0; try { localStorage.removeItem('ppc_dirty'); } catch(e){} }
+
+let _fbPushQueued = false;
 async function cloudPush(){
-  if(_fbSyncing) return;
+  // Don't drop pushes made while one is in flight — queue a follow-up instead,
+  // otherwise the skipped edit never reaches the cloud and the next pull reverts it.
+  if(_fbSyncing){ _fbPushQueued = true; return; }
   _fbSyncing = true;
   setSyncDot('syncing');
   try {
@@ -1363,12 +1372,15 @@ async function cloudPush(){
     });
     if(!r.ok) throw new Error('HTTP '+r.status);
     try { localStorage.setItem('ppc_push_ts', String(payload._ts)); } catch(e){}
+    // Edits made after this payload was built stay dirty; the queued push covers them
+    if (_localDirty && _localDirty <= payload._ts) clearDirty();
     _fbAvailable = true;
     setSyncDot('ok');
   } catch(err){
     setSyncDot('error');
   }
   _fbSyncing = false;
+  if(_fbPushQueued){ _fbPushQueued = false; cloudPush(); }
 }
 
 async function cloudPull(){
@@ -1384,15 +1396,22 @@ async function cloudPull(){
     const data = JSON.parse(txt);
     if(!data){ setSyncDot('ok'); return; }
 
-    // ── Timestamp guard: don't overwrite local edits made after last push ──
+    // ── Pending local edits: never let a pull overwrite them — push instead ──
+    if(_localDirty > 0){
+      cloudPush();
+      return;
+    }
+
+    // ── Timestamp guard: only take remote data strictly newer than our last push.
+    //    (>= would re-apply our own last push over newer unsaved local state.)
+    //    localTs===0 means this browser never pushed — accept whatever the cloud has.
     const localTs = parseInt(localStorage.getItem('ppc_push_ts') || '0');
     const remoteTs = data._ts || 0;
-    const isNewer = remoteTs >= localTs;
+    const isNewer = remoteTs > localTs || localTs === 0;
 
-    if(Array.isArray(data.shiftMaster)) STATE.shiftMaster = data.shiftMaster;
-    if(Array.isArray(data.employees))   STATE.employees   = data.employees;
-    // Only replace logs/leave/reports if remote data is newer than our last push
     if(isNewer){
+      if(Array.isArray(data.shiftMaster)) STATE.shiftMaster = data.shiftMaster;
+      if(Array.isArray(data.employees))   STATE.employees   = data.employees;
       if(data.logs && typeof data.logs==='object') {
         // Deduplicate each employee's log by dateIn before storing
         const cleanLogs = {};
@@ -1409,13 +1428,13 @@ async function cloudPull(){
       }
       if(Array.isArray(data.leave))         STATE.leave         = data.leave;
       if(Array.isArray(data.reportHistory)) STATE.reportHistory = data.reportHistory;
-    }
-    if(data.coverage){
-      STATE.coverageFrom = data.coverage.from || '';
-      STATE.coverageTo   = data.coverage.to   || '';
-      if (STATE.coverageFrom) document.getElementById('cov-from').value = STATE.coverageFrom;
-      if (STATE.coverageTo)   document.getElementById('cov-to').value   = STATE.coverageTo;
-      if (STATE.coverageFrom && STATE.coverageTo) updateCoverage();
+      if(data.coverage){
+        STATE.coverageFrom = data.coverage.from || '';
+        STATE.coverageTo   = data.coverage.to   || '';
+        if (STATE.coverageFrom) document.getElementById('cov-from').value = STATE.coverageFrom;
+        if (STATE.coverageTo)   document.getElementById('cov-to').value   = STATE.coverageTo;
+        if (STATE.coverageFrom && STATE.coverageTo) updateCoverage();
+      }
     }
     // Refresh dropdowns with restored data
     if (STATE.shiftMaster.length) updateShiftDropdowns();
@@ -1446,6 +1465,8 @@ async function cloudPull(){
 }
 
 function fbSave(){
+  // Mark local edits as pending so cloudPull can't revert them before they sync
+  markDirty();
   // Save to localStorage first (fast), then push to Firebase
   try {
     localStorage.setItem('ppc_logs',          JSON.stringify(STATE.logs));
@@ -1630,10 +1651,12 @@ document.addEventListener('click', function(e) {
 });
 
 
-function updateCoverage() {
+function updateCoverage(userChange) {
   STATE.coverageFrom = document.getElementById('cov-from').value;
   STATE.coverageTo = document.getElementById('cov-to').value;
   try { localStorage.setItem('ppc_coverage', JSON.stringify({from: STATE.coverageFrom, to: STATE.coverageTo})); } catch(e) {}
+  // Push user-made coverage changes to the cloud so the next cloudPull doesn't revert them
+  if (userChange) fbSave();
   const el = document.getElementById('status-coverage');
   if (STATE.coverageFrom && STATE.coverageTo) {
     el.className = 'badge badge-green';
@@ -1858,6 +1881,7 @@ function addLogRow() {
   }
   rows.push({ dateIn: nextDate, dateOut: nextDate, timeIn: '', timeOut: '', shiftCode: '' });
   renderLogRows();
+  saveLogsToStorage();
 }
 
 function _autoFillCoverage() {
