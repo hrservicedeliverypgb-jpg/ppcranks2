@@ -1695,8 +1695,9 @@ function updateCoverage(userChange) {
         banner.style.display = 'none';
       }
     }
-    // Auto-fill new coverage dates if log is empty
-    if (STATE.coverageFrom && STATE.coverageTo && (!STATE.logs[STATE.selectedEmpId] || STATE.logs[STATE.selectedEmpId].length === 0)) {
+    // Refresh rows for the coverage period: add any missing dates in range,
+    // keep rows that already have time data, drop blank rows outside the range
+    if (STATE.coverageFrom && STATE.coverageTo) {
       _autoFillCoverage();
     }
   }
@@ -1914,6 +1915,12 @@ function _autoFillCoverage() {
     d.setDate(d.getDate()+1);
   }
 
+  // Drop blank rows outside the coverage range (rows with time/shift data are kept)
+  [...dedupMap.entries()].forEach(([key, r]) => {
+    const blank = !r.timeIn && !r.timeOut && !r.shiftCode;
+    if (blank && (key < STATE.coverageFrom || key > STATE.coverageTo)) dedupMap.delete(key);
+  });
+
   // Rebuild sorted array
   STATE.logs[STATE.selectedEmpId] = [...dedupMap.values()]
     .sort((a,b) => (a.dateIn||a.date||'').localeCompare(b.dateIn||b.date||''));
@@ -1926,7 +1933,12 @@ function clearAllLogs() {
   if (!STATE.selectedEmpId) return;
   if (!confirm('Clear all time log entries for this employee?')) return;
   STATE.logs[STATE.selectedEmpId] = [];
-  renderLogRows();
+  // Repopulate fresh blank rows for the coverage dates right away
+  if (STATE.coverageFrom && STATE.coverageTo) {
+    _autoFillCoverage();
+  } else {
+    renderLogRows();
+  }
   updateDashboard();
   saveLogsToStorage();
   toast('All entries cleared', 'success');
