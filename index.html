@@ -57,13 +57,81 @@
     z-index: 0;
   }
 
-  /* ─── LOGIN ─────────────────────────────────── */
-  #login-screen {
+  /* ─── WELCOME / ACCESS SCREEN ────────────────── */
+  #access-screen {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #1F3864 0%, #2A4A7A 50%, #1a3258 100%);
+    background: linear-gradient(160deg, #E9EFF7 0%, #DDE6F2 100%);
     z-index: 9999;
+    padding: 20px;
   }
+  .access-card {
+    width: 100%;
+    max-width: 400px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 32px 30px 34px;
+    box-shadow: 0 12px 40px rgba(31,56,100,0.16);
+  }
+  .access-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .access-logo {
+    width: 46px; height: 46px;
+    flex-shrink: 0;
+    background: #1e2a4a;
+    color: #ffffff;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .access-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2340;
+    line-height: 1.3;
+  }
+  .access-sub {
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 3px;
+  }
+  .access-divider {
+    height: 1px;
+    background: #E4E9F2;
+    margin: 22px 0;
+  }
+  .access-welcome {
+    font-size: 30px;
+    font-weight: 700;
+    color: #1a2340;
+    margin-bottom: 8px;
+  }
+  .access-text {
+    font-size: 13.5px;
+    color: #5A7184;
+    margin-bottom: 26px;
+    line-height: 1.5;
+  }
+  .btn-access {
+    width: 100%;
+    background: #1e2a4a;
+    color: #ffffff;
+    border: none;
+    border-radius: 999px;
+    padding: 15px 20px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  }
+  .btn-access:hover { background: var(--accent2); box-shadow: 0 6px 18px rgba(31,56,100,0.3); }
+  .btn-access:active { transform: scale(0.98); }
   .login-box {
     width: 380px;
     background: #ffffff;
@@ -510,8 +578,22 @@
 </head>
 <body>
 
-<!-- LOGIN (disabled — open access, app loads directly) -->
-<div id="login-screen" style="display:none"></div>
+<!-- WELCOME / ACCESS SCREEN (no login — one click to enter) -->
+<div id="access-screen">
+  <div class="access-card">
+    <div class="access-brand">
+      <div class="access-logo">✓</div>
+      <div class="access-brand-text">
+        <div class="access-title">PGB Timekeeping Monitoring Dashboard</div>
+        <div class="access-sub">Secure Employee Access Portal</div>
+      </div>
+    </div>
+    <div class="access-divider"></div>
+    <div class="access-welcome">Welcome</div>
+    <p class="access-text">Click below to access the Timekeeping Monitoring Dashboard</p>
+    <button class="btn-access" id="btn-access" onclick="enterApp()">Access Dashboard&nbsp;&nbsp;→</button>
+  </div>
+</div>
 
 <!-- APP -->
 <div id="app">
@@ -896,9 +978,9 @@ const STATE = {
   }
 })();
 
-// ─── OPEN ACCESS (no login required) ────────────────────────────
+// ─── OPEN ACCESS (no login — one click on the welcome screen) ───
 function enterApp() {
-  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('access-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('header-user').textContent = 'PPC Ranks';
   loadSavedSessions();
@@ -941,8 +1023,7 @@ async function importLogsFromXlsx() {
   setTimeout(() => { btn.style.display = 'none'; }, 4000);
 }
 
-// Enter the app immediately on page load — no sign-in needed.
-window.addEventListener('DOMContentLoaded', enterApp);
+// The welcome screen shows first; clicking "Access Dashboard" calls enterApp().
 
 // ─── TABS ────────────────────────────────────────────────────────
 function switchTab(name) {
